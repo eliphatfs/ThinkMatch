@@ -61,6 +61,7 @@ class Net(nn.Module):
                 for j in range(lab_tgt.shape[-1]):
                     if lab_src[b, i] == lab_tgt[b, j]:
                         perm_mat[b, i, j] = 1
+                        break
         data_dict['perm_mat'] = perm_mat.to(y_src)
         data_dict['ds_mat'] = perm_mat.to(y_tgt)
         return data_dict
