@@ -21,7 +21,7 @@ class ResCls(nn.Module):
         return self.outro(x)
 
 
-class IGNet(nn.Module):
+class Net(nn.Module):
     def __init__(self):
         super().__init__()
         self.unet = UNet(3, 128)
