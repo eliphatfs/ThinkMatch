@@ -53,10 +53,14 @@ class Net(nn.Module):
             y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
             y_tgt_pm = y_tgt[torch.arange(len(y_tgt)).unsqueeze(1).to(align), ..., align].transpose(-1, -2)
             data_dict['loss'] = F.kl_div(y_src, y_tgt_pm) - F.kl_div(y_src, y_tgt_rand)
-        lab_src = y_src.argmax(1)
-        lab_tgt = y_tgt.argmax(1)
-        perm_vec = (lab_tgt.unsqueeze(-2) == lab_src.unsqueeze(-1)).float().argmax(-1)
-        perm_mat = torch.eye(lab_tgt.shape[-1]).to(y_src)[perm_vec]
-        data_dict['perm_mat'] = perm_mat
-        data_dict['ds_mat'] = perm_mat
+        lab_src = y_src.argmax(1).cpu().numpy()
+        lab_tgt = y_tgt.argmax(1).cpu().numpy()
+        perm_mat = torch.zeros(len(lab_src), lab_src.shape[-1], lab_tgt.shape[-1])
+        for b in perm_mat:
+            for i in range(lab_src.shape[-1]):
+                for j in range(lab_tgt.shape[-1]):
+                    if lab_src[i] == lab_tgt[j]:
+                        perm_mat[b, i, j] = 1
+        data_dict['perm_mat'] = perm_mat.to(y_src)
+        data_dict['ds_mat'] = perm_mat.to(y_tgt)
         return data_dict
