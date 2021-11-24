@@ -28,6 +28,10 @@ class Net(nn.Module):
         self.rescale = cfg.PROBLEM.RESCALE
         self.cls = ResCls(3, 512, 24)
 
+    @property
+    def device(self):
+        return next(self.parameters()).device
+
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
