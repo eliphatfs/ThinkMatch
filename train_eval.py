@@ -281,6 +281,8 @@ if __name__ == '__main__':
         criterion = PermutationLossHung()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hamming':
         criterion = HammingLoss()
+    elif cfg.TRAIN.LOSS_FUNC.lower() == 'plain':
+        criterion = HammingLoss()
     else:
         raise ValueError('Unknown loss function {}'.format(cfg.TRAIN.LOSS_FUNC))
 
