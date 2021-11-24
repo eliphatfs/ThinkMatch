@@ -56,7 +56,7 @@ class Net(nn.Module):
         lab_src = y_src.argmax(1).cpu().numpy()
         lab_tgt = y_tgt.argmax(1).cpu().numpy()
         perm_mat = torch.zeros(len(lab_src), lab_src.shape[-1], lab_tgt.shape[-1])
-        for b in perm_mat:
+        for b in range(len(perm_mat)):
             for i in range(lab_src.shape[-1]):
                 for j in range(lab_tgt.shape[-1]):
                     if lab_src[b, i] == lab_tgt[b, j]:
