@@ -10,8 +10,8 @@ class ResCls(nn.Module):
     def __init__(self, n, unit, outro):
         super().__init__()
         self.verse = nn.ModuleList([nn.BatchNorm1d(unit) for _ in range(n)])
-        self.chorus = nn.ModuleList([nn.Conv1d(unit, unit) for _ in range(n)])
-        self.outro = nn.Conv1d(unit, outro)
+        self.chorus = nn.ModuleList([nn.Conv1d(unit, unit, 1) for _ in range(n)])
+        self.outro = nn.Conv1d(unit, outro, 1)
 
     def forward(self, x):
         for chorus, verse in zip(self.chorus, self.verse):
