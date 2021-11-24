@@ -55,8 +55,8 @@ class Net(nn.Module):
             data_dict['loss'] = F.kl_div(y_src, y_tgt_pm) - F.kl_div(y_src, y_tgt_rand)
         lab_src = y_src.argmax(1)
         lab_tgt = y_tgt.argmax(1)
-        perm_mat = (lab_tgt.unsqueeze(-2) == lab_src.unsqueeze(-1)).to(y_src)
+        perm_vec = (lab_tgt.unsqueeze(-2) == lab_src.unsqueeze(-1)).argmax(-1)
+        perm_mat = torch.eye(lab_tgt.shape[-1]).to(y_src)[perm_vec]
         data_dict['perm_mat'] = perm_mat
         data_dict['ds_mat'] = perm_mat
-        import pdb; pdb.set_trace()
         return data_dict
