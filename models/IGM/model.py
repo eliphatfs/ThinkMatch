@@ -18,9 +18,9 @@ class ResCls(nn.Module):
 
     def forward(self, x):
         for chorus, verse in zip(self.chorus, self.verse):
-            d = torch.relu(verse(x))
-            d = chorus(d)
-            x = x + d
+            d = chorus(x)
+            d = torch.relu(verse(d))
+            x = d
         return self.outro(x)
 
 
@@ -29,7 +29,7 @@ class Net(nn.Module):
         super().__init__()
         self.unet = UNet(3, 2)
         self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(3, 64 + 512 * 2, 256)
+        self.cls = ResCls(2, 64 + 512 * 2, 256)
         self.global_net = nn.Sequential(
             nn.MaxPool2d(4),  # 4
             nn.Flatten(),
@@ -69,17 +69,13 @@ class Net(nn.Module):
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
         sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
-        # mask = torch.zeros_like(sim)
-        # for b in range(len(mask)):
-        #     mask[b, :ns_src[b], :ns_tgt[b]] = 1
-        # sim = sim * mask
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
         if 'gt_perm_mat' in data_dict:
             if random.random() < 0.04:
                 import numpy
-                numpy.set_printoptions(formatter={"float": "%.2f".__mod__})
+                numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if abs(x) > 0.01 else '-'})
                 print(data_dict['ds_mat'][0].detach().cpu().numpy())
                 print(data_dict['gt_perm_mat'][0].detach().cpu().numpy())
         data_dict['loss'] = loss
