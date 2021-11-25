@@ -75,7 +75,7 @@ class Net(nn.Module):
         if 'gt_perm_mat' in data_dict:
             if random.random() < 0.04:
                 import numpy
-                numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if abs(x) > 0.01 else '-'})
+                numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if abs(x) > 0.01 else '----'})
                 print(data_dict['ds_mat'][0].detach().cpu().numpy())
                 print(data_dict['gt_perm_mat'][0].detach().cpu().numpy())
         data_dict['loss'] = loss
