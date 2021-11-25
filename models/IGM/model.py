@@ -27,7 +27,8 @@ class ResCls(nn.Module):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.unet = UNet(3, 64)
+        self.unet = UNet(3, 2)
+        self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         self.cls = ResCls(3, 64 + 512 * 2, 256)
         self.global_net = nn.Sequential(
             nn.MaxPool2d(4),  # 4
@@ -68,22 +69,19 @@ class Net(nn.Module):
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
         sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
-        mask = torch.zeros_like(sim)
-        for b in range(len(mask)):
-            mask[b, :ns_src[b], :ns_tgt[b]] = 1
-        sim = sim * mask
-        data_dict['ds_mat'] = F.softmax(sim, 1)  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        # mask = torch.zeros_like(sim)
+        # for b in range(len(mask)):
+        #     mask[b, :ns_src[b], :ns_tgt[b]] = 1
+        # sim = sim * mask
+        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
         if 'gt_perm_mat' in data_dict:
             if random.random() < 0.04:
-                print(data_dict['ds_mat'][0])
-                print(data_dict['gt_perm_mat'][0])
-            for b in range(len(mask)):
-                loss = loss + F.cross_entropy(
-                    sim[b: b + 1, :ns_src[b], :ns_tgt[b]],
-                    data_dict['gt_perm_mat'][b: b + 1, :ns_src[b], :ns_tgt[b]].argmax(1)
-                )
+                import numpy
+                numpy.set_printoptions(precision=3, floatmode='fixed')
+                print(data_dict['ds_mat'][0].detach().cpu().numpy())
+                print(data_dict['gt_perm_mat'][0].detach().cpu().numpy())
         data_dict['loss'] = loss
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
