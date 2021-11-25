@@ -29,10 +29,9 @@ class Net(nn.Module):
         self.rescale = cfg.PROBLEM.RESCALE
         self.cls = ResCls(3, 64 + 512 * 2, 256)
         self.global_net = nn.Sequential(
-            nn.Linear(1024, 500),
             nn.MaxPool2d(4),  # 4
             nn.Flatten(),
-            nn.Linear(500 * 4 * 4, 1536),
+            nn.Linear(512 * 4 * 4, 1536),
             nn.BatchNorm1d(1536),
             nn.ReLU(),
             nn.Linear(1536, 512)
