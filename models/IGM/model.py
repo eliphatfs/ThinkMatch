@@ -82,7 +82,7 @@ class Net(nn.Module):
             for b in range(len(mask)):
                 loss = loss + F.cross_entropy(
                     sim[b: b + 1, :ns_src[b], :ns_tgt[b]],
-                    data_dict['gt_perm_mat'][b: b + 1].argmax(1)
+                    data_dict['gt_perm_mat'][b: b + 1, :ns_src[b], :ns_tgt[b]].argmax(1)
                 )
         data_dict['loss'] = loss
         # if 'gt_perm_mat' in data_dict:
