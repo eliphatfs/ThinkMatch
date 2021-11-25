@@ -47,8 +47,8 @@ class Net(nn.Module):
         ns_src, ns_tgt = data_dict['ns']
         x5_src, feat_src = self.unet(src)
         x5_tgt, feat_tgt = self.unet(tgt)
-        glob_src = self.global_net(x5_src)
-        glob_tgt = self.global_net(x5_tgt)
+        glob_src = self.global_net(x5_src).unsqueeze(-1)
+        glob_tgt = self.global_net(x5_tgt).unsqueeze(-1)
         U_src = feature_align(feat_src, P_src, ns_src, self.rescale)
         U_tgt = feature_align(feat_tgt, P_tgt, ns_tgt, self.rescale)
         F_src = torch.cat([U_src, glob_src.expand_as(U_src), glob_tgt.expand_as(U_tgt)], 1)
