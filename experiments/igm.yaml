@@ -40,7 +40,7 @@ TRAIN:
   START_EPOCH: 0
   NUM_EPOCHS: 20
 
-  LOSS_FUNC: plain
+  LOSS_FUNC: perm
 
   # learning rate
   OPTIMIZER: adam

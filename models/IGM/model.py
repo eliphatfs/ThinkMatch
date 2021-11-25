@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from src.feature_align import feature_align
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
+from src.lap_solvers.sinkhorn import Sinkhorn
 
 
 class ResCls(nn.Module):
@@ -26,7 +27,6 @@ class Net(nn.Module):
     def __init__(self):
         super().__init__()
         self.unet = UNet(3, 64)
-        self.rescale = cfg.PROBLEM.RESCALE
         self.cls = ResCls(3, 64 + 512 * 2, 256)
         self.global_net = nn.Sequential(
             nn.MaxPool2d(4),  # 4
@@ -36,6 +36,9 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.Linear(1536, 512)
         )
+        self.tau = cfg.NGM.SK_TAU
+        self.rescale = cfg.PROBLEM.RESCALE
+        self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
     @property
     def device(self):
@@ -63,7 +66,8 @@ class Net(nn.Module):
         ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
-        data_dict['ds_mat'] = F.cosine_similarity(y_src.unsqueeze(-1), y_tgt.unsqueeze(-2))
+        sim = F.cosine_similarity(y_src.unsqueeze(-1), y_tgt.unsqueeze(-2))
+        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
