@@ -51,8 +51,16 @@ class Net(nn.Module):
         glob_tgt = self.global_net(x5_tgt).unsqueeze(-1)
         U_src = feature_align(feat_src, P_src, ns_src, self.rescale)
         U_tgt = feature_align(feat_tgt, P_tgt, ns_tgt, self.rescale)
-        F_src = torch.cat([U_src, glob_src.expand_as(U_src), glob_tgt.expand_as(U_tgt)], 1)
-        F_tgt = torch.cat([U_tgt, glob_tgt.expand_as(U_tgt), glob_src.expand_as(U_src)], 1)
+        F_src = torch.cat([
+            U_src,
+            glob_src.expand(*glob_src.shape[:-1], ns_src),
+            glob_tgt.expand(*glob_tgt.shape[:-1], ns_src)
+        ], 1)
+        F_tgt = torch.cat([
+            U_tgt,
+            glob_tgt.expand(*glob_tgt.shape[:-1], ns_tgt),
+            glob_src.expand(*glob_src.shape[:-1], ns_tgt)
+        ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
         data_dict['ds_mat'] = F.cosine_similarity(y_src.unsqueeze(-1), y_tgt.unsqueeze(-2))
