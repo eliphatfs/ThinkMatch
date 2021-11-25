@@ -60,7 +60,7 @@ def _hung_kernel(s: torch.Tensor, n1=None, n2=None):
         n1 = s.shape[0]
     if n2 is None:
         n2 = s.shape[1]
-    row, col = opt.linear_sum_assignment(s[:n1, :n2], True)
+    row, col = opt.linear_sum_assignment(s[:n1, :n2])
     perm_mat = np.zeros_like(s)
     perm_mat[row, col] = 1
     return perm_mat
