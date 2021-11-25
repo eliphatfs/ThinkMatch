@@ -66,7 +66,7 @@ NGM:
   FEATURE_CHANNEL: 512
   SK_ITER_NUM: 20
   SK_EPSILON: 1.0e-10
-  SK_TAU: 0.05
+  SK_TAU: 1
   GNN_FEAT:
     - 16
     - 16
