@@ -70,6 +70,7 @@ class Net(nn.Module):
         sim = F.sigmoid(torch.einsum("bci,bcj->bij", y_src, y_tgt))
         data_dict['ds_mat'] = sim  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
+        import pdb; pdb.set_trace()
         if 'gt_perm_mat' in data_dict:
             print(sim[0])
             print(data_dict['gt_perm_mat'][0])
