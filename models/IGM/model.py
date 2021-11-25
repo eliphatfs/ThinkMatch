@@ -72,12 +72,9 @@ class Net(nn.Module):
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         if 'gt_perm_mat' in data_dict:
             if random.random() < 0.04:
-                print(data_dict['ds_mat'][0][:ns_src, :ns_tgt])
-                print(data_dict['gt_perm_mat'][0][:ns_src, :ns_tgt])
-            data_dict['loss'] = F.cross_entropy(
-                sim[..., :ns_src, :ns_tgt],
-                data_dict['gt_perm_mat'].argmax(1)
-            )
+                print(data_dict['ds_mat'][0])
+                print(data_dict['gt_perm_mat'][0])
+            data_dict['loss'] = F.cross_entropy(sim, data_dict['gt_perm_mat'].argmax(1))
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
         #     y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
