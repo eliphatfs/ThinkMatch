@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from src.feature_align import feature_align
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
+import random
 from src.lap_solvers.sinkhorn import Sinkhorn
 
 
@@ -64,12 +65,15 @@ class Net(nn.Module):
             glob_tgt.expand(*glob_tgt.shape[:-1], U_tgt.shape[-1]),
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
-        y_src = self.cls(F_src)
-        y_tgt = self.cls(F_tgt)
-        sim = F.cosine_similarity(y_src.unsqueeze(-1), y_tgt.unsqueeze(-2))
+        y_src = F.softmax(self.cls(F_src), 1)
+        y_tgt = F.softmax(self.cls(F_tgt), 1)
+        sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
         data_dict['ds_mat'] = sim  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         if 'gt_perm_mat' in data_dict:
+            if random.random() < 0.04:
+                print(sim[0])
+                print(data_dict['gt_perm_mat'][0])
             data_dict['loss'] = F.mse_loss(sim, data_dict['gt_perm_mat'])
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
