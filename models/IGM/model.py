@@ -53,13 +53,13 @@ class Net(nn.Module):
         U_tgt = feature_align(feat_tgt, P_tgt, ns_tgt, self.rescale)
         F_src = torch.cat([
             U_src,
-            glob_src.expand(*glob_src.shape[:-1], ns_src),
-            glob_tgt.expand(*glob_tgt.shape[:-1], ns_src)
+            glob_src.expand(*glob_src.shape[:-1], U_src.shape[-1]),
+            glob_tgt.expand(*glob_tgt.shape[:-1], U_src.shape[-1])
         ], 1)
         F_tgt = torch.cat([
             U_tgt,
-            glob_tgt.expand(*glob_tgt.shape[:-1], ns_tgt),
-            glob_src.expand(*glob_src.shape[:-1], ns_tgt)
+            glob_tgt.expand(*glob_tgt.shape[:-1], U_tgt.shape[-1]),
+            glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
