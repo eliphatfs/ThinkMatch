@@ -65,8 +65,8 @@ class Net(nn.Module):
             glob_tgt.expand(*glob_tgt.shape[:-1], U_tgt.shape[-1]),
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
-        y_src = F.softmax(self.cls(F_src), 1)
-        y_tgt = F.softmax(self.cls(F_tgt), 1)
+        y_src = self.cls(F_src)
+        y_tgt = self.cls(F_tgt)
         sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
         data_dict['ds_mat'] = sim  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
@@ -74,7 +74,7 @@ class Net(nn.Module):
             if random.random() < 0.04:
                 print(sim[0])
                 print(data_dict['gt_perm_mat'][0])
-            data_dict['loss'] = F.mse_loss(sim, data_dict['gt_perm_mat'])
+            data_dict['loss'] = sim.mean() - (sim * data_dict['gt_perm_mat']).mean()
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
         #     y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
