@@ -66,7 +66,7 @@ class Net(nn.Module):
         ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
-        sim = F.cosine_similarity(y_src.unsqueeze(-1), y_tgt.unsqueeze(-2))
+        sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         # if 'gt_perm_mat' in data_dict:
