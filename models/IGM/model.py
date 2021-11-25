@@ -74,13 +74,17 @@ class Net(nn.Module):
         sim = sim * mask
         data_dict['ds_mat'] = F.softmax(sim, 1)  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
+        loss = 0.0
         if 'gt_perm_mat' in data_dict:
             if random.random() < 0.04:
                 print(data_dict['ds_mat'][0])
                 print(data_dict['gt_perm_mat'][0])
-            data_dict['loss'] = F.cross_entropy(
-                sim, data_dict['gt_perm_mat'].argmax(1)
-            )
+            for b in range(len(mask)):
+                loss = loss + F.cross_entropy(
+                    sim[b: b + 1, :ns_src[b], :ns_tgt[b]],
+                    data_dict['gt_perm_mat'][b: b + 1].argmax(1)
+                )
+        data_dict['loss'] = loss
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
         #     y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
