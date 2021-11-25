@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.feature_align import feature_align
 from src.utils.config import cfg
+from src.lap_solvers.hungarian import hungarian
 
 
 class ResCls(nn.Module):
@@ -24,9 +25,18 @@ class ResCls(nn.Module):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.unet = UNet(3, 128)
+        self.unet = UNet(3, 64)
         self.rescale = cfg.PROBLEM.RESCALE
-        self.cls = ResCls(3, 512, 24)
+        self.cls = ResCls(3, 64 + 512 * 2, 256)
+        self.global_net = nn.Sequential(
+            nn.Linear(1024, 500),
+            nn.MaxPool2d(4),  # 4
+            nn.Flatten(),
+            nn.Linear(500 * 4 * 4, 1536),
+            nn.BatchNorm1d(1536),
+            nn.ReLU(),
+            nn.Linear(1536, 512)
+        )
 
     @property
     def device(self):
@@ -36,33 +46,33 @@ class Net(nn.Module):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
-        feat_src = self.unet(src)
-        feat_tgt = self.unet(tgt)
-        glob_src = torch.max(feat_src.flatten(2), -1, True)[0]
-        glob_tgt = torch.max(feat_tgt.flatten(2), -1, True)[0]
+        x5_src, feat_src = self.unet(src)
+        x5_tgt, feat_tgt = self.unet(tgt)
+        glob_src = self.global_net(x5_src)
+        glob_tgt = self.global_net(x5_tgt)
         U_src = feature_align(feat_src, P_src, ns_src, self.rescale)
         U_tgt = feature_align(feat_tgt, P_tgt, ns_tgt, self.rescale)
-        U_src = torch.cat([U_src, glob_src.expand_as(U_src)], 1)
-        U_tgt = torch.cat([U_tgt, glob_tgt.expand_as(U_tgt)], 1)
-        F_src = torch.cat([U_src, U_tgt], 1)
-        F_tgt = torch.cat([U_tgt, U_src], 1)
-        y_src = F.softmax(self.cls(F_src), 1)
-        y_tgt = F.softmax(self.cls(F_tgt), 1)
-        if 'gt_perm_mat' in data_dict:
-            align = data_dict['gt_perm_mat'].argmax(-1)
-            y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
-            y_tgt_pm = y_tgt[torch.arange(len(y_tgt)).unsqueeze(1).to(align), ..., align].transpose(-1, -2)
-            data_dict['loss'] = F.kl_div(y_src, y_tgt_pm) - F.kl_div(y_src, y_tgt_rand)
-        lab_src = y_src.argmax(1).cpu().numpy()
-        lab_tgt = y_tgt.argmax(1).cpu().numpy()
-        perm_mat = torch.zeros(len(lab_src), lab_src.shape[-1], lab_tgt.shape[-1])
-        for b in range(len(perm_mat)):
-            for i in range(lab_src.shape[-1]):
-                for j in range(lab_tgt.shape[-1]):
-                    if lab_src[b, i] == lab_tgt[b, j]:
-                        perm_mat[b, i, j] = 1
-                        lab_tgt[b, j] = -1
-                        break
-        data_dict['perm_mat'] = perm_mat.to(y_src)
-        data_dict['ds_mat'] = perm_mat.to(y_tgt)
+        F_src = torch.cat([U_src, glob_src.expand_as(U_src), glob_tgt.expand_as(U_tgt)], 1)
+        F_tgt = torch.cat([U_tgt, glob_tgt.expand_as(U_tgt), glob_src.expand_as(U_src)], 1)
+        y_src = self.cls(F_src)
+        y_tgt = self.cls(F_tgt)
+        data_dict['ds_mat'] = F.cosine_similarity(y_src.unsqueeze(-1), y_tgt.unsqueeze(-2))
+        data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
+        # if 'gt_perm_mat' in data_dict:
+        #     align = data_dict['gt_perm_mat'].argmax(-1)
+        #     y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
+        #     y_tgt_pm = y_tgt[torch.arange(len(y_tgt)).unsqueeze(1).to(align), ..., align].transpose(-1, -2)
+        #     data_dict['loss'] = F.kl_div(y_src, y_tgt_pm) - F.kl_div(y_src, y_tgt_rand)
+        # lab_src = y_src.argmax(1).cpu().numpy()
+        # lab_tgt = y_tgt.argmax(1).cpu().numpy()
+        # perm_mat = torch.zeros(len(lab_src), lab_src.shape[-1], lab_tgt.shape[-1])
+        # for b in range(len(perm_mat)):
+        #     for i in range(lab_src.shape[-1]):
+        #         for j in range(lab_tgt.shape[-1]):
+        #             if lab_src[b, i] == lab_tgt[b, j]:
+        #                 perm_mat[b, i, j] = 1
+        #                 lab_tgt[b, j] = -1
+        #                 break
+        # data_dict['perm_mat'] = perm_mat.to(y_src)
+        # data_dict['ds_mat'] = perm_mat.to(y_tgt)
         return data_dict
