@@ -68,13 +68,19 @@ class Net(nn.Module):
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
         sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
+        mask = torch.zeros_like(sim)
+        for b in range(len(mask)):
+            mask[b, :ns_src[b], :ns_tgt[b]] = 1
+        sim = sim * mask
         data_dict['ds_mat'] = F.softmax(sim, 1)  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         if 'gt_perm_mat' in data_dict:
             if random.random() < 0.04:
                 print(data_dict['ds_mat'][0])
                 print(data_dict['gt_perm_mat'][0])
-            data_dict['loss'] = F.cross_entropy(sim, data_dict['gt_perm_mat'].argmax(1))
+            data_dict['loss'] = F.cross_entropy(
+                sim, data_dict['gt_perm_mat'].argmax(1)
+            )
         # if 'gt_perm_mat' in data_dict:
         #     align = data_dict['gt_perm_mat'].argmax(-1)
         #     y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
