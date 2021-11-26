@@ -82,10 +82,10 @@ class Net(nn.Module):
 
     def halo(self, feat_srcs, feat_tgts, P_src, P_tgt):
         U_src = torch.cat([
-            my_align(feat_src, P_src, self.rescale) for feat_src in feat_srcs + [self.pos_emb]
+            my_align(feat_src, P_src, self.rescale) for feat_src in feat_srcs
         ], 1)
         U_tgt = torch.cat([
-            my_align(feat_tgt, P_tgt, self.rescale) for feat_tgt in feat_tgts + [self.pos_emb]
+            my_align(feat_tgt, P_tgt, self.rescale) for feat_tgt in feat_tgts
         ], 1)
         glob_src = feat_srcs[-1].flatten(1).unsqueeze(-1)
         glob_tgt = feat_tgts[-1].flatten(1).unsqueeze(-1)
@@ -97,7 +97,11 @@ class Net(nn.Module):
             U_tgt,
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
-        return F_src, F_tgt
+        exp_posemb = self.pos_emb.expand(len(P_src), *self.pos_emb.shape)
+        return (
+            F_src + my_align(exp_posemb, P_src, self.rescale),
+            F_tgt + my_align(exp_posemb, P_tgt, self.rescale)
+        )
 
     def attn(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
         exp_posemb = self.pos_emb.expand(len(y_src), *self.pos_emb.shape)
