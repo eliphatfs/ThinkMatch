@@ -48,14 +48,11 @@ class RandomPerspective(torch.nn.Module):
         """
 
         fill = self.fill
-        if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
-            else:
-                fill = [float(f) for f in fill]
+        if not F._is_pil_image(img):
+            raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
         if torch.rand(1) < self.p:
-            width, height = F._get_image_size(img)
+            width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             lerp = p / p.new_tensor([height, width])
             pn = p.new_tensor(endpoints[0]) * (1 - lerp) + p.new_tensor(endpoints[2]) * lerp
