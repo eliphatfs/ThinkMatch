@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 import xlwt
+import tqdm
 
 from src.dataset.data_loader import GMDataset, get_dataloader
 from src.evaluation_metric import *
@@ -13,8 +14,29 @@ from src.utils.timer import Timer
 from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
 
+dataloaders = []
+cached_bm = None
+
+
+def cache(classes, bm):
+    global cached_bm
+    dataloaders.clear()
+    for cls in tqdm.tqdm(classes):
+        image_dataset = GMDataset(name=cfg.DATASET_FULL_NAME,
+                                    bm=bm,
+                                    problem=cfg.PROBLEM.TYPE,
+                                    length=cfg.EVAL.SAMPLES,
+                                    cls=cls,
+                                    using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
+        torch.manual_seed(cfg.RANDOM_SEED)
+        dataloader = get_dataloader(list(image_dataset), shuffle=True)
+        dataloaders.append(dataloader)
+    cached_bm = bm
+
 
 def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=None):
+    if bm != cached_bm:
+        cache(classes, bm)
     print('Start evaluation...')
     since = time.time()
 
@@ -22,19 +44,6 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
 
     was_training = model.training
     model.eval()
-
-    dataloaders = []
-
-    for cls in classes:
-        image_dataset = GMDataset(name=cfg.DATASET_FULL_NAME,
-                                  bm=bm,
-                                  problem=cfg.PROBLEM.TYPE,
-                                  length=cfg.EVAL.SAMPLES,
-                                  cls=cls,
-                                  using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
-        torch.manual_seed(cfg.RANDOM_SEED)
-        dataloader = get_dataloader(image_dataset, shuffle=True)
-        dataloaders.append(dataloader)
 
     recalls = []
     precisions = []
