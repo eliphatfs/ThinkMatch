@@ -41,7 +41,7 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = resnet50(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(4, 512 + 1024 * 2, 1536, 32)
+        self.cls = ResCls(4, 512 + 2048 * 2, 1536, 32)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
