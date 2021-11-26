@@ -1,4 +1,5 @@
 from models.IGM.unet import UNet
+from torchvision.models import resnet50
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,34 +11,28 @@ from src.lap_solvers.sinkhorn import Sinkhorn
 
 
 class ResCls(nn.Module):
-    def __init__(self, n, unit, outro):
+    def __init__(self, n, intro, unit, outro):
         super().__init__()
         self.verse = nn.ModuleList([nn.BatchNorm1d(unit) for _ in range(n)])
         self.chorus = nn.ModuleList([nn.Conv1d(unit, unit, 1) for _ in range(n)])
+        self.intro = nn.Conv1d(intro, unit, 1)
         self.outro = nn.Conv1d(unit, outro, 1)
 
     def forward(self, x):
+        x = self.intro(x)
         for chorus, verse in zip(self.chorus, self.verse):
-            d = chorus(x)
-            d = torch.relu(verse(d))
-            x = d
+            d = torch.relu(verse(x))
+            d = chorus(d)
+            x = x + d
         return self.outro(x)
 
 
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.unet = UNet(3, 2)
-        self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(2, 64 + 512 * 2, 24)
-        self.global_net = nn.Sequential(
-            nn.MaxPool2d(4),  # 4
-            nn.Flatten(),
-            nn.Linear(512 * 4 * 4, 1536),
-            nn.BatchNorm1d(1536),
-            nn.ReLU(),
-            nn.Linear(1536, 512)
-        )
+        self.resnet = resnet50(True)  # UNet(3, 2)
+        # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
+        self.cls = ResCls(3, 64 + 2048 * 2, 1536, 32)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
@@ -46,14 +41,26 @@ class Net(nn.Module):
     def device(self):
         return next(self.parameters()).device
 
+    def encode(self, x):
+        r = self.resnet
+        x = r.conv1(x)
+        x = r.bn1(x)
+        x = r.relu(x)
+        x = r.maxpool(x)
+
+        x = r.layer1(x)
+        x = r.layer2(x)
+        g = r.layer3(x)
+        g = r.layer4(g)
+        g = r.avgpool(g)
+        return g, x
+
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
-        x5_src, feat_src = self.unet(src)
-        x5_tgt, feat_tgt = self.unet(tgt)
-        glob_src = self.global_net(x5_src).unsqueeze(-1)
-        glob_tgt = self.global_net(x5_tgt).unsqueeze(-1)
+        glob_src, feat_src = self.encode(src)
+        glob_tgt, feat_tgt = self.encode(tgt)
         U_src = feature_align(feat_src, P_src, ns_src, self.rescale)
         U_tgt = feature_align(feat_tgt, P_tgt, ns_tgt, self.rescale)
         F_src = torch.cat([
