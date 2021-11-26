@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
-from torchvision.transforms.transforms import ColorJitter, ToPILImage
+from torchvision.transforms.transforms import ColorJitter, RandomPerspective, ToPILImage
 import torch_geometric as pyg
 import numpy as np
 import random
@@ -131,14 +131,31 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
-            trans = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.ColorJitter(0.2, 0.2, 0.2),
-                transforms.ToTensor(),
-                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
-                transforms.RandomErasing(scale=(0.02, 0.1)),
-            ])
+            if self.test:
+                trans = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
+                ])
+            else:
+                trans = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.ColorJitter(0.3, 0.3, 0.3),
+                    transforms.ToTensor(),
+                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
+                    transforms.RandomErasing(scale=(0.02, 0.2)),
+                ])
             imgs = [trans(img) for img in imgs]
+            if not self.test:
+                from extra.perspective import RandomPerspective
+                nimgs = []
+                nps = []
+                rptr = RandomPerspective()
+                for img, p in zip(imgs, ret_dict['Ps']):
+                    img, p = rptr.forward(img, p)
+                    nimgs.append(img)
+                    nps.append(p)
+                ret_dict['Ps'] = nps
+                imgs = nimgs
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
             feat1 = np.stack([kp['feat'] for kp in anno_pair[0]['kpts']], axis=-1)
