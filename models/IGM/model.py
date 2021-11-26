@@ -48,11 +48,11 @@ class Net(nn.Module):
         self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
         self.attentions = torch.nn.ModuleList([
             torch.nn.MultiheadAttention(512, 8)
-            for _ in range(4)
+            for _ in range(2)
         ])
         self.atn_mlp = torch.nn.ModuleList([
             torch.nn.Sequential(torch.nn.Linear(512, 512), torch.nn.LayerNorm(512), torch.nn.ReLU())
-            for _ in range(4)
+            for _ in range(2)
         ])
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
@@ -107,8 +107,8 @@ class Net(nn.Module):
         for atn, ff in zip(self.attentions, self.atn_mlp):
             atn_src, _ = atn(y_src, y_tgt, y_tgt, key_padding_mask=key_mask_tgt)
             atn_tgt, _ = atn(y_tgt, y_src, y_src, key_padding_mask=key_mask_src)
-            y_src = y_src + ff(atn_src)
-            y_tgt = y_tgt + ff(atn_tgt)
+            y_src = ff(y_src + atn_src)
+            y_tgt = ff(y_tgt + atn_tgt)
         return y_src.permute(1, 2, 0), y_tgt.permute(1, 2, 0)
 
     def forward(self, data_dict, **kwargs):
