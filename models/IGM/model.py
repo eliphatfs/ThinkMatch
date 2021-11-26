@@ -48,11 +48,11 @@ class Net(nn.Module):
         self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
         self.attentions = torch.nn.ModuleList([
             torch.nn.MultiheadAttention(512, 8)
-            for _ in range(2)
+            for _ in range(3)
         ])
         self.atn_mlp = torch.nn.ModuleList([
             torch.nn.Sequential(torch.nn.Linear(512, 512), torch.nn.LayerNorm(512), torch.nn.ReLU())
-            for _ in range(2)
+            for _ in range(3)
         ])
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
