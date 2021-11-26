@@ -84,12 +84,12 @@ class Net(nn.Module):
         ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
-        sim = torch.sigmoid(torch.einsum(
+        sim = torch.einsum(
             "bci,bcj->bij",
             y_src - y_src.mean(-1, keepdim=True),
             y_tgt - y_tgt.mean(-1, keepdim=True)
-        ))
-        data_dict['ds_mat'] = sim  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        )
+        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
         if 'gt_perm_mat' in data_dict:
