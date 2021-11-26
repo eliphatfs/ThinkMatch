@@ -41,9 +41,19 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = resnet50(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(4, 64 + (64 + 128 + 256 + 512 + 512 * 2) * 4, 2048, 512)
+        feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2) * 4
+        self.cls = ResCls(4, feature_lat, 2048, 512)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
+        self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
+        self.attentions = torch.nn.ModuleList([
+            torch.nn.MultiheadAttention(512, 8, batch_first=True)
+            for _ in range(4)
+        ])
+        self.atn_mlp = torch.nn.ModuleList([
+            torch.nn.Sequential(torch.nn.Linear(512, 512), torch.nn.LayerNorm(512), torch.nn.ReLU())
+            for _ in range(4)
+        ])
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
     @property
@@ -88,6 +98,18 @@ class Net(nn.Module):
         ], 1)
         return F_src, F_tgt
 
+    def attn(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
+        y_src = (y_src + my_align(self.pos_emb, P_src, self.rescale)).transpose(-1, -2)
+        y_tgt = (y_tgt + my_align(self.pos_emb, P_tgt, self.rescale)).transpose(-1, -2)
+        key_mask_src = torch.arange(y_src.shape[-1]).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
+        key_mask_tgt = torch.arange(y_tgt.shape[-1]).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
+        for atn, ff in zip(self.attentions, self.atn_mlp):
+            atn_src, _ = atn(y_src, y_tgt, y_tgt, key_padding_mask=key_mask_tgt)
+            atn_tgt, _ = atn(y_tgt, y_src, y_src, key_padding_mask=key_mask_src)
+            y_src = y_src + ff(atn_src)
+            y_tgt = y_tgt + ff(atn_tgt)
+        return y_src, y_tgt
+
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
@@ -95,8 +117,10 @@ class Net(nn.Module):
 
         feat_srcs, feat_tgts = list(self.encode(src)), list(self.encode(tgt))
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
-        y_src = self.cls(F_src)
-        y_tgt = self.cls(F_tgt)
+
+        y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
+        y_src, y_tgt = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+
         sim = torch.einsum(
             "bci,bcj->bij",
             y_src - y_src.mean(-1, keepdim=True),

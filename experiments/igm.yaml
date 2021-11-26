@@ -7,7 +7,7 @@ MODULE: models.IGM.model
 
 BACKBONE: VGG16_bn
 
-BATCH_SIZE: 8
+BATCH_SIZE: 12
 DATALOADER_NUM: 2
 FP16: False
 
@@ -53,7 +53,7 @@ TRAIN:
     - 9
     - 16
 
-  EPOCH_ITERS: 2000  # iterations per epoch
+  EPOCH_ITERS: 1300  # iterations per epoch
 
   CLASS: none
 
