@@ -125,8 +125,8 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        y_src, y_tgt = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
-        sim = self.projection(y_src), self.projection(y_tgt)
+        sim = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        # sim = self.projection(y_src), self.projection(y_tgt)
 
         # sim = torch.einsum(
         #     "bci,bcj->bij",
