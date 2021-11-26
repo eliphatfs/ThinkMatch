@@ -54,7 +54,7 @@ class Net(nn.Module):
             torch.nn.Sequential(torch.nn.Linear(512, 512), torch.nn.LayerNorm(512), torch.nn.ReLU())
             for _ in range(2)
         ])
-        self.projection = torch.nn.Linear(512, 32)
+        self.projection = torch.nn.Conv1d(512, 32, 1)
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
     @property
