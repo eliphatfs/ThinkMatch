@@ -47,7 +47,7 @@ class Net(nn.Module):
         self.rescale = cfg.PROBLEM.RESCALE
         self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
         self.attentions = torch.nn.ModuleList([
-            torch.nn.MultiheadAttention(512, 8, batch_first=True)
+            torch.nn.MultiheadAttention(512, 8)
             for _ in range(4)
         ])
         self.atn_mlp = torch.nn.ModuleList([
@@ -99,8 +99,8 @@ class Net(nn.Module):
         return F_src, F_tgt
 
     def attn(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
-        y_src = (y_src + my_align(self.pos_emb, P_src, self.rescale)).transpose(-1, -2)
-        y_tgt = (y_tgt + my_align(self.pos_emb, P_tgt, self.rescale)).transpose(-1, -2)
+        y_src = (y_src + my_align(self.pos_emb, P_src, self.rescale)).permute(2, 0, 1)
+        y_tgt = (y_tgt + my_align(self.pos_emb, P_tgt, self.rescale)).permute(2, 0, 1)
         key_mask_src = torch.arange(y_src.shape[-1]).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1]).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         for atn, ff in zip(self.attentions, self.atn_mlp):
@@ -108,7 +108,7 @@ class Net(nn.Module):
             atn_tgt, _ = atn(y_tgt, y_src, y_src, key_padding_mask=key_mask_src)
             y_src = y_src + ff(atn_src)
             y_tgt = y_tgt + ff(atn_tgt)
-        return y_src, y_tgt
+        return y_src.permute(1, 2, 0), y_tgt.permute(1, 2, 0)
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
