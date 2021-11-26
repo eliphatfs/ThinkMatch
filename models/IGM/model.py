@@ -52,7 +52,7 @@ class Net(nn.Module):
         x = r.layer2(x)
         g = r.layer3(x)
         g = r.layer4(g)
-        g = r.avgpool(g).flatten(1)
+        g = r.avgpool(g).flatten(1).unsqueeze(-1)
         return g, x
 
     def forward(self, data_dict, **kwargs):
