@@ -29,14 +29,14 @@ class Net(nn.Module):
         super().__init__()
         self.unet = UNet(3, 2)
         self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(2, 64 + 512 * 2, 256)
+        self.cls = ResCls(2, 64 + 512 * 2, 24)
         self.global_net = nn.Sequential(
             nn.MaxPool2d(4),  # 4
             nn.Flatten(),
             nn.Linear(512 * 4 * 4, 1536),
             nn.BatchNorm1d(1536),
             nn.ReLU(),
-            nn.Linear(1536, 24)
+            nn.Linear(1536, 512)
         )
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
