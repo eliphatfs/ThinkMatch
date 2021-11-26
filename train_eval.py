@@ -213,7 +213,7 @@ def train_eval_model(model,
         else:
             clss = dataloader['test'].dataset.bm.classes
         l_e = (epoch == (num_epochs - 1))
-        accs = eval_model(model, clss, benchmark['test'], l_e,
+        accs = eval_model(model, clss, benchmark['test'], l_e, True,
                           xls_sheet=xls_wb.add_sheet('epoch{}'.format(epoch + 1)))
         acc_dict = {"{}".format(cls): single_acc for cls, single_acc in zip(dataloader['test'].dataset.classes, accs)}
         acc_dict['average'] = torch.mean(accs)
