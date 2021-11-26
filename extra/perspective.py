@@ -92,14 +92,18 @@ class RandomPerspective(torch.nn.Module):
             pn = torch.stack([yn, xn], -1)
             qi = F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill)
             q = qi.load()
+            print(x, y, xn, yn)
             for ny, nx in zip(yn.long().numpy(), xn.long().numpy()):
                 ny = int(ny)
                 nx = int(nx)
-                q[ny, nx] = (255, 0, 255)
-                q[ny, nx + 1] = (255, 0, 255)
-                q[ny, nx - 1] = (255, 0, 255)
-                q[ny + 1, nx] = (255, 0, 255)
-                q[ny - 1, nx] = (255, 0, 255)
+                try:
+                    q[ny, nx] = (255, 0, 255)
+                    q[ny, nx + 1] = (255, 0, 255)
+                    q[ny, nx - 1] = (255, 0, 255)
+                    q[ny + 1, nx] = (255, 0, 255)
+                    q[ny - 1, nx] = (255, 0, 255)
+                except IndexError:
+                    pass
             qi.save("test.png")
             import pdb; pdb.set_trace()
             return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
