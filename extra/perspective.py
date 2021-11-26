@@ -100,7 +100,7 @@ class RandomPerspective(torch.nn.Module):
         if torch.rand(1) < self.p:
             width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-            a, b, c, d, e, f, g, h = _get_perspective_coeffs(startpoints, endpoints)
+            a, b, c, d, e, f, g, h = _get_perspective_coeffs(endpoints, startpoints)
             x = p[..., 0]
             y = p[..., 1]
             xn = (a * x + b * y + c) / (g * x + h * y + 1)
