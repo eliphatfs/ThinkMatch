@@ -9,6 +9,22 @@ from torchvision.transforms import functional as F
 from PIL import Image
 
 
+def draw_kps(img, P, save):
+    qi = img.copy()
+    q = qi.load()
+    for ny, nx in zip(P[..., 0], P[..., 1]):
+        nx, ny = int(ny), int(nx)
+        try:
+            q[ny, nx] = (255, 0, 255)
+            q[ny, nx + 1] = (255, 0, 255)
+            q[ny, nx - 1] = (255, 0, 255)
+            q[ny + 1, nx] = (255, 0, 255)
+            q[ny - 1, nx] = (255, 0, 255)
+        except IndexError:
+            pass
+    q.save(save)
+
+
 def _get_perspective_coeffs(
         startpoints: List[List[int]], endpoints: List[List[int]]
 ) -> List[float]:
@@ -91,20 +107,9 @@ class RandomPerspective(torch.nn.Module):
             yn = (d * x + e * y + f) / (g * x + h * y + 1)
             pn = torch.stack([yn, xn], -1)
             qi = F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill).copy()
-            q = qi.load()
             print(x, y, xn, yn)
-            for ny, nx in zip(yn.long().numpy(), xn.long().numpy()):
-                nx, ny = int(ny), int(nx)
-                try:
-                    q[ny, nx] = (255, 0, 255)
-                    q[ny, nx + 1] = (255, 0, 255)
-                    q[ny, nx - 1] = (255, 0, 255)
-                    q[ny + 1, nx] = (255, 0, 255)
-                    q[ny - 1, nx] = (255, 0, 255)
-                except IndexError:
-                    pass
-            img.save("origin.png")
-            qi.save("test.png")
+            draw_kps(img, p, "origin.png")
+            draw_kps(qi, pn, "test.png")
             raise SystemExit
             return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
         return img, p
