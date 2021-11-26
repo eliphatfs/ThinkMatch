@@ -28,7 +28,7 @@ def cache(classes, bm):
                                     using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
         torch.manual_seed(cfg.RANDOM_SEED)
         dataloader = get_dataloader(image_dataset, fix_seed=False, shuffle=False)
-        dataloaders.append(iter(dataloader))
+        dataloaders.append(dataloader)
 
 
 def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=None):
@@ -67,7 +67,8 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
         cluster_purity_list = []
         cluster_ri_list = []
         prediction_cls = []
-
+        if i != len(classes) - 1:
+            dataloaders[i + 1] = iter(dataloaders[i + 1])
         for inputs in dataloaders[i]:
             if iter_num >= cfg.EVAL.SAMPLES / inputs['batch_size']:
                 break
