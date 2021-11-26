@@ -137,6 +137,7 @@ class GMDataset(Dataset):
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
                 ])
             else:
+                print("A")
                 trans = transforms.Compose([
                     transforms.ToPILImage(),
                     transforms.ColorJitter(0.3, 0.3, 0.3),
@@ -146,6 +147,7 @@ class GMDataset(Dataset):
                 ])
             imgs = [trans(img) for img in imgs]
             if not self.test:
+                print("P")
                 from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
