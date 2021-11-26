@@ -155,6 +155,7 @@ def train_eval_model(model,
                             scaled_loss.backward()
                     else:
                         loss.backward()
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
 
                     batch_num = inputs['batch_size']
@@ -178,8 +179,8 @@ def train_eval_model(model,
 
                     if iter_num % cfg.STATISTIC_STEP == 0:
                         running_speed = cfg.STATISTIC_STEP * batch_num / (time.time() - running_since)
-                        print('Epoch {:<4} Iteration {:<4} {:>4.2f}sample/s Loss={:<8.4f}'
-                              .format(epoch, iter_num, running_speed, running_loss / cfg.STATISTIC_STEP / batch_num))
+                        print('Epoch {:<4} Iteration {:<4} {:>4.2f}sample/s Loss={:<8.4f} Acc={:.4f}'
+                              .format(epoch, iter_num, running_speed, running_loss / cfg.STATISTIC_STEP / batch_num, torch.mean(acc).item()))
                         tfboard_writer.add_scalars(
                             'speed',
                             {'speed': running_speed},
