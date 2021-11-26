@@ -137,7 +137,7 @@ class GMDataset(Dataset):
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
                 ])
             else:
-                from extra.perspective import RandomPerspective
+                """from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
@@ -147,8 +147,9 @@ class GMDataset(Dataset):
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
-                imgs = nimgs
+                imgs = nimgs"""
                 trans = transforms.Compose([
+                    transforms.ToPILImage(),
                     transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
                     transforms.ToTensor(),
                     transforms.RandomErasing(scale=(0.02, 0.16)),
