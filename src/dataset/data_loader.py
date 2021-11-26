@@ -149,10 +149,12 @@ class GMDataset(Dataset):
                 from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
+                to_pil = transforms.ToPILImage()
+                to_ten = transforms.ToTensor()
                 rptr = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = rptr.forward(img, p)
-                    nimgs.append(img)
+                    img, p = rptr.forward(to_pil(img), p)
+                    nimgs.append(to_ten(img))
                     nps.append(p)
                 ret_dict['Ps'] = nps
                 imgs = nimgs

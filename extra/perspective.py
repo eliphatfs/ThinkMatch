@@ -1,5 +1,4 @@
 import numbers
-import warnings
 from collections.abc import Sequence
 from typing import Tuple, List
 
@@ -7,7 +6,7 @@ import torch
 from torch import Tensor
 
 from torchvision.transforms import functional as F
-from torchvision.transforms.functional import InterpolationMode, _interpolation_modes_from_int
+from PIL import Image
 
 
 class RandomPerspective(torch.nn.Module):
@@ -27,19 +26,9 @@ class RandomPerspective(torch.nn.Module):
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
+    def __init__(self, distortion_scale=0.5, p=0.5, fill=0):
         super().__init__()
         self.p = p
-
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument interpolation should be of type InterpolationMode instead of int. "
-                "Please, use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
-
-        self.interpolation = interpolation
         self.distortion_scale = distortion_scale
 
         if fill is None:
@@ -70,7 +59,7 @@ class RandomPerspective(torch.nn.Module):
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             lerp = p / p.new_tensor([height, width])
             pn = p.new_tensor(endpoints[0]) * (1 - lerp) + p.new_tensor(endpoints[2]) * lerp
-            return F.perspective(img, startpoints, endpoints, self.interpolation, fill), pn
+            return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
         return img, p
 
     @staticmethod
