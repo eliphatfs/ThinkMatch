@@ -30,7 +30,7 @@ def my_align(raw_feature, P, ns_t, ori_size: tuple):
     return F.grid_sample(
         raw_feature,
         2 * P.unsqueeze(-2) / ori_size[0] * raw_feature.shape[-1] - 1,
-        'bicubic',
+        'bilinear',
         'border',
         align_corners=False
     ).squeeze(-1)
