@@ -36,7 +36,7 @@ class Net(nn.Module):
             nn.Linear(512 * 4 * 4, 1536),
             nn.BatchNorm1d(1536),
             nn.ReLU(),
-            nn.Linear(1536, 512)
+            nn.Linear(1536, 24)
         )
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
@@ -73,7 +73,7 @@ class Net(nn.Module):
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
         if 'gt_perm_mat' in data_dict:
-            if random.random() < 0.04:
+            if random.random() < 0.01:
                 import numpy
                 numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if abs(x) > 0.01 else '----'})
                 print(data_dict['ds_mat'][0, :ns_src[0], :ns_tgt[0]].detach().cpu().numpy())
