@@ -51,8 +51,7 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
     prediction = []
 
     for i, cls in enumerate(classes):
-        if verbose:
-            print('Evaluating class {}: {}/{}'.format(cls, i, len(classes)))
+        print('Evaluating class {}: {}/{}'.format(cls, i, len(classes)))
 
         running_since = time.time()
         iter_num = 0
