@@ -83,6 +83,7 @@ class GMDataset(Dataset):
         )
         return pyg_graph
 
+    @profile
     def get_pair(self, idx, cls):
         #anno_pair, perm_mat = self.bm.get_pair(self.cls if self.cls is not None else
         #                                       (idx % (cfg.BATCH_SIZE * len(self.classes))) // cfg.BATCH_SIZE)
