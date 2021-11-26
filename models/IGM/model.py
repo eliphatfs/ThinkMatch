@@ -42,10 +42,10 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(4, feature_lat, 2048, 512)
+        self.cls = ResCls(4, feature_lat, 2048, 64)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
+        self.pos_emb = torch.nn.Parameter(torch.randn(feature_lat, 16, 16))
         self.attentions = torch.nn.ModuleList([
             torch.nn.MultiheadAttention(512, 8)
             for _ in range(4)
@@ -82,10 +82,10 @@ class Net(nn.Module):
 
     def halo(self, feat_srcs, feat_tgts, P_src, P_tgt):
         U_src = torch.cat([
-            my_align(feat_src, P_src, self.rescale) for feat_src in feat_srcs
+            my_align(feat_src, P_src, self.rescale) for feat_src in feat_srcs + [self.pos_emb]
         ], 1)
         U_tgt = torch.cat([
-            my_align(feat_tgt, P_tgt, self.rescale) for feat_tgt in feat_tgts
+            my_align(feat_tgt, P_tgt, self.rescale) for feat_tgt in feat_tgts + [self.pos_emb]
         ], 1)
         glob_src = feat_srcs[-1].flatten(1).unsqueeze(-1)
         glob_tgt = feat_tgts[-1].flatten(1).unsqueeze(-1)
@@ -125,14 +125,14 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        sim = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        # sim = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
         # sim = self.projection(y_src), self.projection(y_tgt)
 
-        # sim = torch.einsum(
-        #     "bci,bcj->bij",
-        #     y_src - y_src.mean(-1, keepdim=True),
-        #     y_tgt - y_tgt.mean(-1, keepdim=True)
-        # )
+        sim = torch.einsum(
+            "bci,bcj->bij",
+            y_src - y_src.mean(-1, keepdim=True),
+            y_tgt - y_tgt.mean(-1, keepdim=True)
+        )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
