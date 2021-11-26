@@ -12,7 +12,7 @@ from PIL import Image
 def draw_kps(img, P, save):
     qi = img.copy()
     q = qi.load()
-    for ny, nx in zip(P[..., 0], P[..., 1]):
+    for nx, ny in zip(P[..., 0], P[..., 1]):
         nx, ny = int(ny), int(nx)
         try:
             q[ny, nx] = (255, 0, 255)
@@ -101,16 +101,16 @@ class RandomPerspective(torch.nn.Module):
             width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             a, b, c, d, e, f, g, h = _get_perspective_coeffs(startpoints, endpoints)
-            y = p[..., 0]
-            x = p[..., 1]
+            x = p[..., 0]
+            y = p[..., 1]
             xn = (a * x + b * y + c) / (g * x + h * y + 1)
             yn = (d * x + e * y + f) / (g * x + h * y + 1)
-            pn = torch.stack([yn, xn], -1)
+            pn = torch.stack([xn, yn], -1)
             qi = F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill).copy()
             print(x, y, xn, yn)
             draw_kps(img, p, "origin.png")
             draw_kps(qi, pn, "test.png")
-            raise SystemExit
+            input("P")
             return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
         return img, p
 
