@@ -43,10 +43,10 @@ TRAIN:
   LOSS_FUNC: perm
 
   # learning rate
-  # OPTIMIZER: sgd
-  LR: 0.01
+  OPTIMIZER: adam
+  LR: 0.001
   MOMENTUM: 0.95
-  LR_DECAY: 0.4
+  LR_DECAY: 0.9
   LR_STEP:  # (in epochs)
     - 1
     - 5
