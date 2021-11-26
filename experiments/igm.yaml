@@ -40,12 +40,12 @@ TRAIN:
   START_EPOCH: 0
   NUM_EPOCHS: 20
 
-  LOSS_FUNC: perm
+  LOSS_FUNC: focal
 
   # learning rate
   # OPTIMIZER: adam
   LR: 0.01
-  MOMENTUM: 0.95
+  MOMENTUM: 0.9
   LR_DECAY: 0.316
   LR_STEP:  # (in epochs)
     - 1

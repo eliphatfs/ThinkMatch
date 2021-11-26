@@ -1,5 +1,5 @@
 from models.IGM.unet import UNet
-from torchvision.models import resnet50
+from torchvision.models import resnet34
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,20 +39,20 @@ def my_align(raw_feature, P, ori_size: tuple):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet = resnet50(True)  # UNet(3, 2)
+        self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2) * 4
+        feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         self.cls = ResCls(4, feature_lat, 2048, 512)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
         self.attentions = torch.nn.ModuleList([
             torch.nn.MultiheadAttention(512, 8)
-            for _ in range(3)
+            for _ in range(2)
         ])
         self.atn_mlp = torch.nn.ModuleList([
             torch.nn.Sequential(torch.nn.Linear(512, 512), torch.nn.LayerNorm(512), torch.nn.ReLU())
-            for _ in range(3)
+            for _ in range(2)
         ])
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
@@ -105,8 +105,8 @@ class Net(nn.Module):
         y_src = (y_src + my_align(exp_posemb, P_src, self.rescale)).permute(2, 0, 1)
         y_tgt = (y_tgt + my_align(exp_posemb, P_tgt, self.rescale)).permute(2, 0, 1)
         for atn, ff in zip(self.attentions, self.atn_mlp):
-            atn_src, _ = atn(y_src, y_tgt, y_tgt, key_padding_mask=key_mask_tgt)
-            atn_tgt, _ = atn(y_tgt, y_src, y_src, key_padding_mask=key_mask_src)
+            atn_src, _ = atn(y_src, y_src, y_src, key_padding_mask=key_mask_src)
+            atn_tgt, _ = atn(y_tgt, y_tgt, y_tgt, key_padding_mask=key_mask_tgt)
             y_src = ff(y_src + atn_src)
             y_tgt = ff(y_tgt + atn_tgt)
         return y_src.permute(1, 2, 0), y_tgt.permute(1, 2, 0)

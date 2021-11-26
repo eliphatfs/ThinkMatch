@@ -280,7 +280,7 @@ if __name__ == '__main__':
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'ce':
         criterion = CrossEntropyLoss()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'focal':
-        criterion = FocalLoss(alpha=.5, gamma=0.)
+        criterion = FocalLoss(gamma=2.0)
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hung':
         criterion = PermutationLossHung()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hamming':
