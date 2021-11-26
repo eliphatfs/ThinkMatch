@@ -152,7 +152,6 @@ class GMDataset(Dataset):
                     transforms.ColorJitter(0.3, 0.3, 0.3),
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
-                    transforms.RandomErasing(scale=(0.02, 0.2)),
                 ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
