@@ -45,16 +45,6 @@ class Net(nn.Module):
         self.cls = ResCls(4, feature_lat, 2048, 64)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pos_emb = torch.nn.Parameter(torch.randn(feature_lat, 16, 16))
-        self.attentions = torch.nn.ModuleList([
-            torch.nn.MultiheadAttention(512, 8)
-            for _ in range(4)
-        ])
-        self.atn_mlp = torch.nn.ModuleList([
-            torch.nn.Sequential(torch.nn.Linear(512, 1536), torch.nn.GELU(), torch.nn.Linear(1536, 512))
-            for _ in range(4)
-        ])
-        self.atn_norm = torch.nn.LayerNorm(512)
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
 
     @property
@@ -98,23 +88,6 @@ class Net(nn.Module):
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
         return F_src, F_tgt
-
-    def attn(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
-        exp_posemb = self.pos_emb.expand(len(y_src), *self.pos_emb.shape)
-        key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) >= n_src.unsqueeze(-1)
-        key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) >= n_tgt.unsqueeze(-1)
-        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1)
-        atn_mask_cat = (key_mask_cat.unsqueeze(-1) & key_mask_cat.unsqueeze(-2)).unsqueeze(1).repeat_interleave(8, 1).flatten(0, 1)
-        y_src = (y_src + my_align(exp_posemb, P_src, self.rescale)).permute(2, 0, 1)
-        y_tgt = (y_tgt + my_align(exp_posemb, P_tgt, self.rescale)).permute(2, 0, 1)
-        y_cat = torch.cat((y_src, y_tgt), 0)
-        for atn, ff in zip(self.attentions, self.atn_mlp):
-            x = self.atn_norm(y_cat)
-            atn_cat, atn_wei = atn(x, x, x, key_padding_mask=key_mask_cat, attn_mask=atn_mask_cat)
-            y_cat = y_cat + atn_cat
-            x = self.atn_norm(y_cat)
-            y_cat = y_cat + ff(x)
-        return atn_wei[..., :len(y_src), len(y_src):] + atn_wei[..., len(y_src):, :len(y_src)].transpose(1, 2)
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
