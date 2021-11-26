@@ -92,7 +92,6 @@ class Net(nn.Module):
         ], 1)
         return F_src, F_tgt
 
-    @profile
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']

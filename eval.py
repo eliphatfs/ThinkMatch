@@ -14,7 +14,6 @@ from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
 
 
-@profile
 def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=None):
     print('Start evaluation...')
     since = time.time()
