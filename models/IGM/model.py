@@ -99,8 +99,9 @@ class Net(nn.Module):
         return F_src, F_tgt
 
     def attn(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
-        y_src = (y_src + my_align(self.pos_emb, P_src, self.rescale)).permute(2, 0, 1)
-        y_tgt = (y_tgt + my_align(self.pos_emb, P_tgt, self.rescale)).permute(2, 0, 1)
+        exp_posemb = self.pos_emb.expand(len(y_src), *self.pos_emb.shape)
+        y_src = (y_src + my_align(exp_posemb, P_src, self.rescale)).permute(2, 0, 1)
+        y_tgt = (y_tgt + my_align(exp_posemb, P_tgt, self.rescale)).permute(2, 0, 1)
         key_mask_src = torch.arange(y_src.shape[-1]).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1]).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         for atn, ff in zip(self.attentions, self.atn_mlp):
