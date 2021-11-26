@@ -15,11 +15,9 @@ from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
 
 dataloaders = []
-cached_bm = None
 
 
 def cache(classes, bm):
-    global cached_bm
     dataloaders.clear()
     for cls in tqdm.tqdm(classes):
         image_dataset = GMDataset(name=cfg.DATASET_FULL_NAME,
@@ -30,13 +28,11 @@ def cache(classes, bm):
                                     using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
         torch.manual_seed(cfg.RANDOM_SEED)
         dataloader = get_dataloader(image_dataset, fix_seed=False, shuffle=False)
-        dataloaders.append(dataloader)
-    cached_bm = bm
+        dataloaders.append(iter(dataloader))
 
 
 def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=None):
-    if bm != cached_bm:
-        cache(classes, bm)
+    cache(classes, bm)
     print('Start evaluation...')
     since = time.time()
 
