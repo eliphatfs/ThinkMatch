@@ -101,7 +101,7 @@ def train_eval_model(model,
                             d_gt, grad_mask = displacement(outputs['gt_perm_mat'], *outputs['Ps'], outputs['ns'][0])
                             d_pred, _ = displacement(outputs['ds_mat'], *outputs['Ps'], outputs['ns'][0])
                             loss = criterion(d_pred, d_gt, grad_mask)
-                        elif cfg.TRAIN.LOSS_FUNC in ['perm', 'ce', 'hung']:
+                        elif cfg.TRAIN.LOSS_FUNC in ['perm', 'ce', 'hung', 'focal']:
                             loss = criterion(outputs['ds_mat'], outputs['gt_perm_mat'], *outputs['ns'])
                         elif cfg.TRAIN.LOSS_FUNC == 'hamming':
                             loss = criterion(outputs['perm_mat'], outputs['gt_perm_mat'])
