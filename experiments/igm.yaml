@@ -53,7 +53,7 @@ TRAIN:
     - 9
     - 16
 
-  EPOCH_ITERS: 5  # iterations per epoch
+  EPOCH_ITERS: 500  # iterations per epoch
 
   CLASS: none
 
