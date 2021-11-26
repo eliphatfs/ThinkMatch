@@ -131,30 +131,30 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
-            if self.test:
-                trans = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
-                ])
-            else:
-                """from extra.perspective import RandomPerspective
-                nimgs = []
-                nps = []
-                to_pil = transforms.ToPILImage()
-                rptr = RandomPerspective()
-                for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = rptr.forward(to_pil(img), p)
-                    nimgs.append(img)
-                    nps.append(p)
-                ret_dict['Ps'] = nps
-                imgs = nimgs"""
-                trans = transforms.Compose([
-                    transforms.ToPILImage(),
-                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-                    transforms.ToTensor(),
-                    transforms.RandomErasing(scale=(0.02, 0.16)),
-                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
-                ])
+            trans = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
+            ])
+            # if self.test:
+            # else:
+            #     """from extra.perspective import RandomPerspective
+            #     nimgs = []
+            #     nps = []
+            #     to_pil = transforms.ToPILImage()
+            #     rptr = RandomPerspective()
+            #     for img, p in zip(imgs, ret_dict['Ps']):
+            #         img, p = rptr.forward(to_pil(img), p)
+            #         nimgs.append(img)
+            #         nps.append(p)
+            #     ret_dict['Ps'] = nps
+            #     imgs = nimgs"""
+            #     trans = transforms.Compose([
+            #         transforms.ToPILImage(),
+            #         transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+            #         transforms.ToTensor(),
+            #         transforms.RandomErasing(scale=(0.02, 0.16)),
+            #         transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
+            #     ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
