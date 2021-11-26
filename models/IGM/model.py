@@ -98,7 +98,6 @@ class Net(nn.Module):
             y_src - y_src.mean(-1, keepdim=True),
             y_tgt - y_tgt.mean(-1, keepdim=True)
         )
-        print(y_src, y_tgt, sim)
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
