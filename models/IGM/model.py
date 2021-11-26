@@ -109,6 +109,7 @@ class Net(nn.Module):
             atn_tgt, _ = atn(y_tgt, y_src, y_src, key_padding_mask=key_mask_src)
             y_src = y_src + ff(atn_src)
             y_tgt = y_tgt + ff(atn_tgt)
+        print(y_src, y_tgt)
         return y_src.permute(1, 2, 0), y_tgt.permute(1, 2, 0)
 
     def forward(self, data_dict, **kwargs):
