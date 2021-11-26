@@ -129,29 +129,4 @@ class Net(nn.Module):
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
-        loss = 0.0
-        if 'gt_perm_mat' in data_dict:
-            if random.random() < 0.01:
-                import numpy
-                numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if abs(x) > 0.01 else '----'})
-                print(data_dict['ds_mat'][0, :ns_src[0], :ns_tgt[0]].detach().cpu().numpy())
-                print(data_dict['gt_perm_mat'][0, :ns_src[0], :ns_tgt[0]].detach().cpu().numpy())
-        data_dict['loss'] = loss
-        # if 'gt_perm_mat' in data_dict:
-        #     align = data_dict['gt_perm_mat'].argmax(-1)
-        #     y_tgt_rand = y_tgt[..., torch.randperm(y_tgt.shape[-1]).to(align)]
-        #     y_tgt_pm = y_tgt[torch.arange(len(y_tgt)).unsqueeze(1).to(align), ..., align].transpose(-1, -2)
-        #     data_dict['loss'] = F.kl_div(y_src, y_tgt_pm) - F.kl_div(y_src, y_tgt_rand)
-        # lab_src = y_src.argmax(1).cpu().numpy()
-        # lab_tgt = y_tgt.argmax(1).cpu().numpy()
-        # perm_mat = torch.zeros(len(lab_src), lab_src.shape[-1], lab_tgt.shape[-1])
-        # for b in range(len(perm_mat)):
-        #     for i in range(lab_src.shape[-1]):
-        #         for j in range(lab_tgt.shape[-1]):
-        #             if lab_src[b, i] == lab_tgt[b, j]:
-        #                 perm_mat[b, i, j] = 1
-        #                 lab_tgt[b, j] = -1
-        #                 break
-        # data_dict['perm_mat'] = perm_mat.to(y_src)
-        # data_dict['ds_mat'] = perm_mat.to(y_tgt)
         return data_dict
