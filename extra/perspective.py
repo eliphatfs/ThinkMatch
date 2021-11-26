@@ -106,11 +106,6 @@ class RandomPerspective(torch.nn.Module):
             xn = (a * x + b * y + c) / (g * x + h * y + 1)
             yn = (d * x + e * y + f) / (g * x + h * y + 1)
             pn = torch.stack([xn, yn], -1)
-            qi = F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill).copy()
-            print(x, y, xn, yn)
-            draw_kps(img, p, "origin.png")
-            draw_kps(qi, pn, "test.png")
-            raise SystemExit
             return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
         return img, p
 
