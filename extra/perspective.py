@@ -93,6 +93,8 @@ class RandomPerspective(torch.nn.Module):
             qi = F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill)
             q = qi.load()
             for ny, nx in zip(yn.long().numpy(), xn.long().numpy()):
+                ny = int(ny)
+                nx = int(nx)
                 q[ny, nx] = (255, 0, 255)
                 q[ny, nx + 1] = (255, 0, 255)
                 q[ny, nx - 1] = (255, 0, 255)
