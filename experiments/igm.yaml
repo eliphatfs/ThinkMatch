@@ -44,10 +44,11 @@ TRAIN:
 
   # learning rate
   # OPTIMIZER: sgd
-  LR: 0.02
+  LR: 0.01
   MOMENTUM: 0.95
-  LR_DECAY: 0.3
+  LR_DECAY: 0.4
   LR_STEP:  # (in epochs)
+    - 1
     - 5
     - 10
     - 15
@@ -65,9 +66,9 @@ EVAL:
 NGM:
   EDGE_FEATURE: cat
   FEATURE_CHANNEL: 512
-  SK_ITER_NUM: 25
+  SK_ITER_NUM: 30
   SK_EPSILON: 1.0e-10
-  SK_TAU: 0.3
+  SK_TAU: 0.25
   GNN_FEAT:
     - 16
     - 16
