@@ -29,7 +29,7 @@ class ResCls(nn.Module):
 def my_align(raw_feature, P, ns_t, ori_size: tuple):
     return F.grid_sample(
         raw_feature,
-        2 * P.unsqueeze(-2) / ori_size[0] * raw_feature.shape[-1] - 1,
+        2 * P.unsqueeze(-2) / ori_size[0] - 1,
         'bilinear',
         'border',
         align_corners=False
@@ -84,8 +84,8 @@ class Net(nn.Module):
         ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
-        sim = torch.einsum("bci,bcj->bij", y_src, y_tgt)
-        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        sim = F.sigmoid(torch.einsum("bci,bcj->bij", y_src, y_tgt))
+        data_dict['ds_mat'] = sim  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
         if 'gt_perm_mat' in data_dict:
