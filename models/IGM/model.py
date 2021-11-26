@@ -102,6 +102,7 @@ class Net(nn.Module):
         exp_posemb = self.pos_emb.expand(len(y_src), *self.pos_emb.shape)
         y_src = (y_src + my_align(exp_posemb, P_src, self.rescale)).permute(2, 0, 1)
         y_tgt = (y_tgt + my_align(exp_posemb, P_tgt, self.rescale)).permute(2, 0, 1)
+        import pdb; pdb.set_trace()
         key_mask_src = torch.arange(y_src.shape[-1]).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1]).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         for atn, ff in zip(self.attentions, self.atn_mlp):
