@@ -22,7 +22,7 @@ def draw_kps(img, P, save):
             q[ny - 1, nx] = (255, 0, 255)
         except IndexError:
             pass
-    q.save(save)
+    qi.save(save)
 
 
 def _get_perspective_coeffs(
