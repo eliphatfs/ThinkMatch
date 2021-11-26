@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
+from torchvision.transforms.transforms import ColorJitter
 import torch_geometric as pyg
 import numpy as np
 import random
@@ -131,9 +132,11 @@ class GMDataset(Dataset):
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
             trans = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-                    ])
+                transforms.ColorJitter(0.2, 0.2, 0.2),
+                transforms.ToTensor(),
+                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
+                transforms.RandomErasing(scale=(0.02, 0.1)),
+            ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
