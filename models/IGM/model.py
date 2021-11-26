@@ -42,7 +42,7 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(4, feature_lat, 2048, 512)
+        self.cls = ResCls(4, feature_lat, 2048, 32)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pos_emb = torch.nn.Parameter(torch.randn(512, 16, 16))
@@ -120,7 +120,7 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        y_src, y_tgt = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        # y_src, y_tgt = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
 
         sim = torch.einsum(
             "bci,bcj->bij",
