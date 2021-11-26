@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
-from torchvision.transforms.transforms import ColorJitter
+from torchvision.transforms.transforms import ColorJitter, ToPILImage
 import torch_geometric as pyg
 import numpy as np
 import random
@@ -132,6 +132,7 @@ class GMDataset(Dataset):
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
             trans = transforms.Compose([
+                transforms.ToPILImage(),
                 transforms.ColorJitter(0.2, 0.2, 0.2),
                 transforms.ToTensor(),
                 transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
