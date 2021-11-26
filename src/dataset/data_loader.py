@@ -137,27 +137,24 @@ class GMDataset(Dataset):
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
                 ])
             else:
+                from extra.perspective import RandomPerspective
+                nimgs = []
+                nps = []
+                to_pil = transforms.ToPILImage()
+                rptr = RandomPerspective()
+                for img, p in zip(imgs, ret_dict['Ps']):
+                    img, p = rptr.forward(to_pil(img), p)
+                    nimgs.append(img)
+                    nps.append(p)
+                ret_dict['Ps'] = nps
+                imgs = nimgs
                 trans = transforms.Compose([
-                    transforms.ToPILImage(),
                     transforms.ColorJitter(0.3, 0.3, 0.3),
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
                     transforms.RandomErasing(scale=(0.02, 0.2)),
                 ])
             imgs = [trans(img) for img in imgs]
-            if not self.test:
-                from extra.perspective import RandomPerspective
-                nimgs = []
-                nps = []
-                to_pil = transforms.ToPILImage()
-                to_ten = transforms.ToTensor()
-                rptr = RandomPerspective()
-                for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = rptr.forward(to_pil(img), p)
-                    nimgs.append(to_ten(img))
-                    nps.append(p)
-                ret_dict['Ps'] = nps
-                imgs = nimgs
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
             feat1 = np.stack([kp['feat'] for kp in anno_pair[0]['kpts']], axis=-1)
