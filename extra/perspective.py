@@ -110,7 +110,7 @@ class RandomPerspective(torch.nn.Module):
             print(x, y, xn, yn)
             draw_kps(img, p, "origin.png")
             draw_kps(qi, pn, "test.png")
-            input("P")
+            raise SystemExit
             return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
         return img, p
 
