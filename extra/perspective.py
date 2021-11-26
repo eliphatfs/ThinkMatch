@@ -85,8 +85,8 @@ class RandomPerspective(torch.nn.Module):
             width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             a, b, c, d, e, f, g, h = _get_perspective_coeffs(startpoints, endpoints)
-            x = p[..., 1]
             y = p[..., 0]
+            x = p[..., 1]
             xn = (a * x + b * y + c) / (g * x + h * y + 1)
             yn = (d * x + e * y + f) / (g * x + h * y + 1)
             pn = torch.stack([yn, xn], -1)
@@ -94,8 +94,7 @@ class RandomPerspective(torch.nn.Module):
             q = qi.load()
             print(x, y, xn, yn)
             for ny, nx in zip(yn.long().numpy(), xn.long().numpy()):
-                ny = int(ny)
-                nx = int(nx)
+                nx, ny = int(ny), int(nx)
                 try:
                     q[ny, nx] = (255, 0, 255)
                     q[ny, nx + 1] = (255, 0, 255)
