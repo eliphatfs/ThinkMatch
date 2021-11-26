@@ -41,7 +41,7 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = resnet50(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(4, 512 + 2048 * 2, 1536, 32)
+        self.cls = ResCls(5, 64 + (64 + 128 + 256 + 512 * 2) * 4, 2048, 32)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
@@ -55,31 +55,40 @@ class Net(nn.Module):
         x = r.conv1(x)
         x = r.bn1(x)
         x = r.relu(x)
+        yield x
         x = r.maxpool(x)
 
         x = r.layer1(x)
+        yield x
         x = r.layer2(x)
-        g = r.layer3(x)
-        g = r.layer4(g)
-        g = r.avgpool(g).flatten(1).unsqueeze(-1)
-        return g, x
+        yield x
+        x = r.layer3(x)
+        yield x
+        x = r.layer4(x)
+        yield x
+        x = r.avgpool(x)
+        yield x
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
-        glob_src, feat_src = self.encode(src)
-        glob_tgt, feat_tgt = self.encode(tgt)
-        U_src = my_align(feat_src, P_src, ns_src, self.rescale)
-        U_tgt = my_align(feat_tgt, P_tgt, ns_tgt, self.rescale)
+        feat_srcs = list(self.encode(src))
+        feat_tgts = list(self.encode(tgt))
+        U_src = torch.cat([
+            my_align(feat_src, P_src, ns_src, self.rescale) for feat_src in feat_srcs
+        ], 1)
+        U_tgt = torch.cat([
+            my_align(feat_tgt, P_tgt, ns_tgt, self.rescale) for feat_tgt in feat_tgts
+        ], 1)
+        glob_src = feat_srcs[-1].flatten(1).unsqueeze(-1)
+        glob_tgt = feat_tgts[-1].flatten(1).unsqueeze(-1)
         F_src = torch.cat([
             U_src,
-            glob_src.expand(*glob_src.shape[:-1], U_src.shape[-1]),
             glob_tgt.expand(*glob_tgt.shape[:-1], U_src.shape[-1])
         ], 1)
         F_tgt = torch.cat([
             U_tgt,
-            glob_tgt.expand(*glob_tgt.shape[:-1], U_tgt.shape[-1]),
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
         y_src = self.cls(F_src)
