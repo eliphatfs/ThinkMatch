@@ -26,7 +26,7 @@ class ResCls(nn.Module):
         return self.outro(x)
 
 
-def my_align(raw_feature, P, ns_t, ori_size: tuple):
+def my_align(raw_feature, P, ori_size: tuple):
     return F.grid_sample(
         raw_feature,
         2 * P.unsqueeze(-2) / ori_size[0] - 1,
@@ -41,7 +41,7 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = resnet50(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        self.cls = ResCls(4, 64 + (64 + 128 + 256 + 512 + 512 * 2) * 4, 2048, 32)
+        self.cls = ResCls(4, 64 + (64 + 128 + 256 + 512 + 512 * 2) * 4, 2048, 512)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
@@ -69,17 +69,12 @@ class Net(nn.Module):
         x = r.avgpool(x)
         yield x
 
-    def forward(self, data_dict, **kwargs):
-        src, tgt = data_dict['images']
-        P_src, P_tgt = data_dict['Ps']
-        ns_src, ns_tgt = data_dict['ns']
-        feat_srcs = list(self.encode(src))
-        feat_tgts = list(self.encode(tgt))
+    def halo(self, feat_srcs, feat_tgts, P_src, P_tgt):
         U_src = torch.cat([
-            my_align(feat_src, P_src, ns_src, self.rescale) for feat_src in feat_srcs
+            my_align(feat_src, P_src, self.rescale) for feat_src in feat_srcs
         ], 1)
         U_tgt = torch.cat([
-            my_align(feat_tgt, P_tgt, ns_tgt, self.rescale) for feat_tgt in feat_tgts
+            my_align(feat_tgt, P_tgt, self.rescale) for feat_tgt in feat_tgts
         ], 1)
         glob_src = feat_srcs[-1].flatten(1).unsqueeze(-1)
         glob_tgt = feat_tgts[-1].flatten(1).unsqueeze(-1)
@@ -91,6 +86,15 @@ class Net(nn.Module):
             U_tgt,
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
+        return F_src, F_tgt
+
+    def forward(self, data_dict, **kwargs):
+        src, tgt = data_dict['images']
+        P_src, P_tgt = data_dict['Ps']
+        ns_src, ns_tgt = data_dict['ns']
+
+        feat_srcs, feat_tgts = list(self.encode(src)), list(self.encode(tgt))
+        F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
         sim = torch.einsum(
