@@ -97,7 +97,6 @@ class Net(nn.Module):
             U_tgt,
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
-        exp_posemb = self.pos_emb.expand(len(P_src), *self.pos_emb.shape)
         return F_src, F_tgt
 
     def attn(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
