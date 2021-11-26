@@ -90,6 +90,13 @@ class RandomPerspective(torch.nn.Module):
             xn = (a * x + b * y + c) / (g * x + h * y + 1)
             yn = (d * x + e * y + f) / (g * x + h * y + 1)
             pn = torch.stack([yn, xn], -1)
+            q = F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill)
+            q[yn, xn] = q.max()
+            q[yn + 1, xn + 1] = q.max()
+            q[yn + 1, xn] = q.max()
+            q[yn, xn + 1] = q.max()
+            q.save("test.png")
+            import pdb; pdb.set_trace()
             return F.perspective(img, startpoints, endpoints, Image.BICUBIC, fill), pn
         return img, p
 
