@@ -84,7 +84,7 @@ class Net(nn.Module):
         ], 1)
         y_src = self.cls(F_src)
         y_tgt = self.cls(F_tgt)
-        sim = torch.sigmoid(torch.einsum("bci,bcj->bij", y_src, y_tgt))
+        sim = torch.softmax(torch.einsum("bci,bcj->bij", y_src, y_tgt), 2)
         data_dict['ds_mat'] = sim  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         loss = 0.0
