@@ -104,26 +104,26 @@ class GMDataset(Dataset):
         P1 = np.array(P1)
         P2 = np.array(P2)
 
-        A1, G1, H1, e1 = build_graphs(P1, n1, stg=cfg.GRAPH.SRC_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
-        if cfg.GRAPH.TGT_GRAPH_CONSTRUCT == 'same':
-            G2 = perm_mat.transpose().dot(G1)
-            H2 = perm_mat.transpose().dot(H1)
-            A2 = G2.dot(H2.transpose())
-            e2 = e1
-        else:
-            A2, G2, H2, e2 = build_graphs(P2, n2, stg=cfg.GRAPH.TGT_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
+        # A1, G1, H1, e1 = build_graphs(P1, n1, stg=cfg.GRAPH.SRC_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
+        # if cfg.GRAPH.TGT_GRAPH_CONSTRUCT == 'same':
+        #     G2 = perm_mat.transpose().dot(G1)
+        #     H2 = perm_mat.transpose().dot(H1)
+        #     A2 = G2.dot(H2.transpose())
+        #     e2 = e1
+        # else:
+        #     A2, G2, H2, e2 = build_graphs(P2, n2, stg=cfg.GRAPH.TGT_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
 
-        pyg_graph1 = self.to_pyg_graph(A1, P1)
-        pyg_graph2 = self.to_pyg_graph(A2, P2)
+        # pyg_graph1 = self.to_pyg_graph(A1, P1)
+        # pyg_graph2 = self.to_pyg_graph(A2, P2)
 
         ret_dict = {'Ps': [torch.Tensor(x) for x in [P1, P2]],
                     'ns': [torch.tensor(x) for x in [n1, n2]],
-                    'es': [torch.tensor(x) for x in [e1, e2]],
+                    # 'es': [torch.tensor(x) for x in [e1, e2]],
                     'gt_perm_mat': perm_mat,
-                    'Gs': [torch.Tensor(x) for x in [G1, G2]],
-                    'Hs': [torch.Tensor(x) for x in [H1, H2]],
-                    'As': [torch.Tensor(x) for x in [A1, A2]],
-                    'pyg_graphs': [pyg_graph1, pyg_graph2],
+                    # 'Gs': [torch.Tensor(x) for x in [G1, G2]],
+                    # 'Hs': [torch.Tensor(x) for x in [H1, H2]],
+                    # 'As': [torch.Tensor(x) for x in [A1, A2]],
+                    # 'pyg_graphs': [pyg_graph1, pyg_graph2],
                     'cls': [str(x) for x in cls],
                     'id_list': id_list,
                     'univ_size': [torch.tensor(int(x)) for x in univ_size],

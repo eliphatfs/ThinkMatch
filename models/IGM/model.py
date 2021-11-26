@@ -45,7 +45,10 @@ class Net(nn.Module):
         self.cls = ResCls(4, feature_lat, 2048, 64)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.sinkhorn = Sinkhorn(max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON)
+        self.sinkhorn = Sinkhorn(
+            max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON,
+            batched_operation=True
+        )
 
     @property
     def device(self):
