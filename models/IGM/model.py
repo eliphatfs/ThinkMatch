@@ -167,7 +167,7 @@ class Net(nn.Module):
             sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
                 folding_src[b: b + 1, :ns_src[b]],
                 folding_tgt[b: b + 1, :ns_tgt[b]],
-            )[1].squeeze(0)
+            )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b])
         if torch.rand(1) < 0.005:
             print("S = ", file=sys.stderr)
             print(sim[0].detach().cpu().numpy(), file=sys.stderr)
