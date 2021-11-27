@@ -167,10 +167,10 @@ class Net(nn.Module):
                 folding_tgt[b: b + 1, :ns_tgt[b]],
             )[1].squeeze(0)
         if torch.rand(1) < 0.005:
-            print("S = ", sim[0].cpu().numpy(), file=sys.stderr)
-            print("G = ", data_dict['gt_perm_mat'][0].cpu().numpy(), file=sys.stderr)
-            print("Ps = ", folding_src[0].cpu().numpy(), file=sys.stderr)
-            print("Pt = ", folding_tgt[0].cpu().numpy(), file=sys.stderr)
+            print("S = ", sim[0].detach().cpu().numpy(), file=sys.stderr)
+            print("G = ", data_dict['gt_perm_mat'][0].detach().cpu().numpy(), file=sys.stderr)
+            print("Ps = ", folding_src[0].detach().cpu().numpy(), file=sys.stderr)
+            print("Pt = ", folding_tgt[0].detach().cpu().numpy(), file=sys.stderr)
         data_dict['ds_mat'] = sim
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
