@@ -1,4 +1,3 @@
-from models.IGM.unet import UNet
 from torchvision.models import resnet34
 import torch
 import torch.nn as nn
@@ -6,7 +5,6 @@ import torch.nn.functional as F
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
-from extra.optimal_transport import SinkhornDistance
 
 
 class ResCls(nn.Module):
@@ -62,19 +60,14 @@ class Net(nn.Module):
             torch.nn.ReLU(),
         )
         self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(2048 + 256, 2048, 1),
+            torch.nn.Conv1d(2048 + 1024 + 256, 2048, 1),
             torch.nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(2048, 2048, 1),
-            torch.nn.BatchNorm1d(2048),
-            torch.nn.ReLU(),
-            torch.nn.Conv1d(2048, 2, 1)
+            torch.nn.Conv1d(2048, 32, 1)
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
-        self.ot = SinkhornDistance(0.05, 8, 'mean')
-        self.backbone_params = list(self.resnet.parameters())
 
     @property
     def device(self):
@@ -134,7 +127,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd), 1))[..., :y_src.shape[-1]]
+        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -148,17 +141,13 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt).transpose(1, 2)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src).transpose(1, 2)
-        # sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1]).to(y_src)
-        # for b in range(len(y_src)):
-        #     sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
-        #         folding_src[b: b + 1, :ns_src[b]],
-        #         folding_tgt[b: b + 1, :ns_tgt[b]],
-        #     )[1].squeeze(0)
-        cd1 = torch.cdist(folding_src.contiguous(), P_tgt.contiguous())
-        cd2 = torch.cdist(P_src.contiguous(), folding_tgt.contiguous())
-        # data_dict['loss'] = ((cd * data_dict['gt_perm_mat']).mean() + 1e-8) / ((cd * (1 - data_dict['gt_perm_mat'])).mean() + 1e-8)
-        data_dict['ds_mat'] = self.sinkhorn(-cd1 - cd2)
+        e_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
+
+        sim = torch.einsum(
+            "bci,bcj->bij",
+            e_src, e_tgt
+        )
+        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
