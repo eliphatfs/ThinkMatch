@@ -150,12 +150,14 @@ class Net(nn.Module):
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
         folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt).transpose(1, 2)
         folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src).transpose(1, 2)
-        sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1]).to(y_src)
-        for b in range(len(y_src)):
-            sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
-                folding_src[b: b + 1, :ns_src[b]],
-                folding_tgt[b: b + 1, :ns_tgt[b]],
-            )[1].squeeze(0)
-        data_dict['ds_mat'] = sim
+        # sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1]).to(y_src)
+        # for b in range(len(y_src)):
+        #     sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
+        #         folding_src[b: b + 1, :ns_src[b]],
+        #         folding_tgt[b: b + 1, :ns_tgt[b]],
+        #     )[1].squeeze(0)
+        cd = torch.cdist(folding_src, folding_tgt)
+        data_dict['loss'] = cd * data_dict['gt_perm_mat'] - cd * (1 - data_dict['gt_perm_mat'])
+        data_dict['ds_mat'] = -cd
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
