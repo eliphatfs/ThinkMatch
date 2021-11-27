@@ -44,7 +44,9 @@ TRAIN:
 
   # learning rate
   # OPTIMIZER: adam
-  LR: 0.1
+  LR: 0.0316
+  SEPARATE_BACKBONE_LR: True
+  BACKBONE_LR: 0.01
   MOMENTUM: 0.9
   LR_DECAY: 0.316
   LR_STEP:  # (in epochs)
