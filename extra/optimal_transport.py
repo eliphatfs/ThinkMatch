@@ -46,7 +46,7 @@ class SinkhornDistance(nn.Module):
         # or max iterations reached
         actual_nits = 0
         # Stopping criterion
-        thresh = 3e-5
+        thresh = 1e-3
 
         # Sinkhorn iterations
         for _ in range(self.max_iter):

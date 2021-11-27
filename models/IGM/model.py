@@ -73,7 +73,7 @@ class Net(nn.Module):
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
-        self.ot = SinkhornDistance(1e-3, 20, 'mean')
+        self.ot = SinkhornDistance(1e-1, 10, 'mean')
 
     @property
     def device(self):
