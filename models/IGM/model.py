@@ -1,3 +1,4 @@
+from models.IGM.unet import UNet
 from torchvision.models import resnet34
 import torch
 import torch.nn as nn
@@ -5,6 +6,7 @@ import torch.nn.functional as F
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
+from extra.optimal_transport import SinkhornDistance
 
 
 class ResCls(nn.Module):
@@ -40,7 +42,7 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(1, feature_lat, 2048, 1024)
+        self.cls = nn.Identity()  # ResCls(1, feature_lat, 2048, 2048)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = torch.nn.Sequential(
@@ -52,23 +54,33 @@ class Net(nn.Module):
             torch.nn.ReLU()
         )
         self.pn = torch.nn.Sequential(
-            torch.nn.Conv1d(1024 + 256, 1536, 1),
-            torch.nn.BatchNorm1d(1536),
-            torch.nn.ReLU(),
-            torch.nn.Conv1d(1536, 2048, 1),
+            torch.nn.Conv1d(feature_lat + 256, 2048, 1),
             torch.nn.BatchNorm1d(2048),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(2048, 3072, 1),
+            torch.nn.BatchNorm1d(3072),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(3072, 3072, 1),
+            torch.nn.BatchNorm1d(3072),
             torch.nn.ReLU(),
         )
         self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(2048 + 1024 + 256, 2048, 1),
-            torch.nn.BatchNorm1d(2048),
+            torch.nn.Conv1d(3072 + 256, 3072, 1),
+            torch.nn.BatchNorm1d(3072),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(2048, 32, 1)
+            torch.nn.Conv1d(3072, 1024, 1),
+            torch.nn.BatchNorm1d(1024),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(1024, 256, 1),
+            torch.nn.BatchNorm1d(256),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(256, 2, 1)
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
-        self.backbone_params = [*self.resnet.parameters()]
+        self.ot = SinkhornDistance(0.02, 10, 'mean')
+        self.backbone_params = list(self.resnet.parameters())
 
     @property
     def device(self):
@@ -128,7 +140,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]]
+        return self.pe(torch.cat((pcc_b, pcd), 1))[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -142,13 +154,14 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        e_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
-        e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
-
-        sim = torch.einsum(
-            "bci,bcj->bij",
-            e_src, e_tgt
-        )
-        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt).transpose(1, 2)
+        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src).transpose(1, 2)
+        sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1]).to(y_src)
+        for b in range(len(y_src)):
+            sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
+                folding_src[b: b + 1, :ns_src[b]],
+                folding_tgt[b: b + 1, :ns_tgt[b]],
+            )[1].squeeze(0)
+        data_dict['ds_mat'] = sim
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
