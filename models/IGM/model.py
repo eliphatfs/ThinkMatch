@@ -1,4 +1,3 @@
-from models.IGM.unet import UNet
 from torchvision.models import resnet34
 import torch
 import torch.nn as nn
@@ -7,6 +6,11 @@ from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
 from extra.optimal_transport import SinkhornDistance
+import numpy
+import sys
+
+
+numpy.set_printoptions(formatter={'float': lambda x: "%.2f" % x if abs(x) > 0.01 else "----"})
 
 
 class ResCls(nn.Module):
@@ -162,6 +166,11 @@ class Net(nn.Module):
                 folding_src[b: b + 1, :ns_src[b]],
                 folding_tgt[b: b + 1, :ns_tgt[b]],
             )[1].squeeze(0)
+        if torch.rand(1) < 0.005:
+            print("S = ", sim[0].cpu().numpy(), file=sys.stderr)
+            print("G = ", data_dict['gt_perm_mat'][0].cpu().numpy(), file=sys.stderr)
+            print("Ps = ", folding_src[0].cpu().numpy(), file=sys.stderr)
+            print("Pt = ", folding_tgt[0].cpu().numpy(), file=sys.stderr)
         data_dict['ds_mat'] = sim
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
