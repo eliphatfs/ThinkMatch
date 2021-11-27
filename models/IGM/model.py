@@ -136,7 +136,10 @@ class Net(nn.Module):
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
 
-        feat_srcs, feat_tgts = list(self.encode(src)), list(self.encode(tgt))
+        feat_srcs, feat_tgts = [], []
+        for feat in self.encode(torch.cat([src, tgt])):
+            feat_srcs.append(feat[:len(src)])
+            feat_tgts.append(feat[len(src):])
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
