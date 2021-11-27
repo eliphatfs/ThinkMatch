@@ -1,5 +1,5 @@
 from models.IGM.unet import UNet
-from torchvision.models import resnet34
+from torchvision.models import resnet18
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,7 +39,7 @@ def my_align(raw_feature, P, ori_size: tuple):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet = resnet34(True)  # UNet(3, 2)
+        self.resnet = resnet18(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         self.cls = ResCls(1, feature_lat, 2048, 1024)
