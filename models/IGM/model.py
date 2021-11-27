@@ -83,7 +83,7 @@ class Net(nn.Module):
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
-        self.ot = SinkhornDistance(1, 10, 'mean')
+        self.ot = SinkhornDistance(0.1, 10, 'mean')
         self.backbone_params = list(self.resnet.parameters())
 
     @property
