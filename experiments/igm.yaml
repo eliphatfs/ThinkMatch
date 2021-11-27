@@ -40,7 +40,7 @@ TRAIN:
   START_EPOCH: 0
   NUM_EPOCHS: 20
 
-  LOSS_FUNC: plain
+  LOSS_FUNC: perm
 
   # learning rate
   OPTIMIZER: sgd
@@ -70,7 +70,7 @@ NGM:
   FEATURE_CHANNEL: 512
   SK_ITER_NUM: 10
   SK_EPSILON: 1.0e-10
-  SK_TAU: 1
+  SK_TAU: 0.02
   GNN_FEAT:
     - 16
     - 16
