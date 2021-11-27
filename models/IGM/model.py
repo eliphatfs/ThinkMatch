@@ -42,9 +42,31 @@ class Net(nn.Module):
         self.resnet = resnet50(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2) * 4
-        self.cls = ResCls(1, feature_lat, 2048, 64)
+        self.cls = ResCls(1, feature_lat, 2048, 1024)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
+        self.pf = torch.nn.Sequential(
+            torch.nn.Conv1d(4, 64, 1),
+            torch.nn.BatchNorm1d(64),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(64, 256, 1),
+            torch.nn.BatchNorm1d(256),
+            torch.nn.ReLU()
+        )
+        self.pn = torch.nn.Sequential(
+            torch.nn.Conv1d(1024 + 256, 1536, 1),
+            torch.nn.BatchNorm1d(1536),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(1536, 2048, 1),
+            torch.nn.BatchNorm1d(2048),
+            torch.nn.ReLU(),
+        )
+        self.pe = torch.nn.Sequential(
+            torch.nn.Conv1d(2048 + 1024 + 256, 2048, 1),
+            torch.nn.BatchNorm1d(2048),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(2048, 32, 1)
+        )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
@@ -91,6 +113,24 @@ class Net(nn.Module):
         ], 1)
         return F_src, F_tgt
 
+    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
+        resc = P_src.new_tensor(self.rescale)
+        P_src, P_tgt = P_src / resc, P_tgt / resc
+        if self.training:
+            P_src = P_src + torch.randn(len(P_src), 1, 2) * 0.1
+            P_tgt = P_tgt + torch.randn(len(P_tgt), 1, 2) * 0.1
+        P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
+        key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
+        key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
+        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
+        P_src = torch.cat((P_src, torch.ones_like(P_src)), 1)
+        P_tgt = torch.cat((P_tgt / self.rescale[0], torch.ones_like(P_tgt)), 1)
+        pcd = self.pf(torch.cat((P_src, P_tgt), -1))
+        y_cat = torch.cat((y_src, y_tgt), -1)
+        pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
+        pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
+        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]]
+
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
@@ -100,13 +140,16 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
+        e_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
         # sim = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
         # sim = self.projection(y_src), self.projection(y_tgt)
 
         sim = torch.einsum(
             "bci,bcj->bij",
-            y_src - y_src.mean(-1, keepdim=True),
-            y_tgt - y_tgt.mean(-1, keepdim=True)
+            e_src, e_tgt
+            # y_src - y_src.mean(-1, keepdim=True),
+            # y_tgt - y_tgt.mean(-1, keepdim=True)
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
