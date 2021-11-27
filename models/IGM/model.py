@@ -133,7 +133,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]]
+        return self.pe(torch.cat((pcc_b, pcd), 1))[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
