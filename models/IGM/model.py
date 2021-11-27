@@ -174,9 +174,9 @@ class Net(nn.Module):
             print("G = ", file=sys.stderr)
             print(data_dict['gt_perm_mat'][0].detach().cpu().numpy(), file=sys.stderr)
             print("Ps = ", file=sys.stderr)
-            print(folding_src[0].transpose(1, 2).detach().cpu().numpy(), file=sys.stderr)
+            print(folding_src[0].t().detach().cpu().numpy(), file=sys.stderr)
             print("Pt = ", file=sys.stderr)
-            print(folding_tgt[0].transpose(1, 2).detach().cpu().numpy(), file=sys.stderr)
+            print(folding_tgt[0].t().detach().cpu().numpy(), file=sys.stderr)
         data_dict['ds_mat'] = sim
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
