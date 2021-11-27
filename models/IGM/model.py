@@ -157,7 +157,7 @@ class Net(nn.Module):
         #         folding_tgt[b: b + 1, :ns_tgt[b]],
         #     )[1].squeeze(0)
         cd = torch.cdist(folding_src.contiguous(), folding_tgt.contiguous())
-        data_dict['loss'] = cd * data_dict['gt_perm_mat'] - cd * (1 - data_dict['gt_perm_mat'])
+        data_dict['loss'] = ((cd * data_dict['gt_perm_mat']).mean() + 1e-8) / ((cd * (1 - data_dict['gt_perm_mat'])).mean() + 1e-8)
         data_dict['ds_mat'] = -cd
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
