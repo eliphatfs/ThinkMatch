@@ -43,12 +43,12 @@ TRAIN:
   LOSS_FUNC: perm
 
   # learning rate
-  # OPTIMIZER: adam
-  LR: 0.0316
+  OPTIMIZER: adam
+  LR: 0.001
   SEPARATE_BACKBONE_LR: True
-  BACKBONE_LR: 0.01
+  BACKBONE_LR: 0.0002
   MOMENTUM: 0.9
-  LR_DECAY: 0.316
+  LR_DECAY: 0.707107
   LR_STEP:  # (in epochs)
     - 1
     - 4

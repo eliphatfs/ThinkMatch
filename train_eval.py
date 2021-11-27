@@ -304,7 +304,7 @@ if __name__ == '__main__':
     if cfg.TRAIN.OPTIMIZER.lower() == 'sgd':
         optimizer = optim.SGD(model_params, lr=cfg.TRAIN.LR, momentum=cfg.TRAIN.MOMENTUM, nesterov=True)
     elif cfg.TRAIN.OPTIMIZER.lower() == 'adam':
-        optimizer = optim.Adam(model_params, lr=cfg.TRAIN.LR)
+        optimizer = optim.Adam(model_params, lr=cfg.TRAIN.LR, eps=1e-4)
     else:
         raise ValueError('Unknown optimizer {}'.format(cfg.TRAIN.OPTIMIZER))
 
