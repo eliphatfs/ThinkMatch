@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
-import random
 from src.lap_solvers.sinkhorn import Sinkhorn
+from extra.optimal_transport import SinkhornDistance
 
 
 class ResCls(nn.Module):
@@ -62,14 +62,18 @@ class Net(nn.Module):
             torch.nn.ReLU(),
         )
         self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(2048 + 1024 + 256, 2048, 1),
+            torch.nn.Conv1d(2048 + 256, 2048, 1),
             torch.nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(2048, 32, 1)
+            torch.nn.Conv1d(2048, 2048, 1),
+            torch.nn.BatchNorm1d(2048),
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(2048, 2, 1)
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
+        self.ot = SinkhornDistance(1e-3, 20, 'mean')
 
     @property
     def device(self):
@@ -143,17 +147,14 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        e_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
-        e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
-        # sim = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
-        # sim = self.projection(y_src), self.projection(y_tgt)
-
-        sim = torch.einsum(
-            "bci,bcj->bij",
-            e_src, e_tgt
-            # y_src - y_src.mean(-1, keepdim=True),
-            # y_tgt - y_tgt.mean(-1, keepdim=True)
-        )
-        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt).transpose(1, 2)
+        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src).transpose(1, 2)
+        sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1])
+        for b in range(len(y_src)):
+            sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
+                folding_src[b: b + 1, :ns_src[b]],
+                folding_tgt[b: b + 1, :ns_tgt[b]],
+            )[1].squeeze(0)
+        data_dict['ds_mat'] = sim
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict

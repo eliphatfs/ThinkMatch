@@ -33,3 +33,12 @@ class Module:
             x = self.atn_norm(y_cat)
             y_cat = y_cat + ff(x)
         return atn_wei[..., :len(y_src), len(y_src):] + atn_wei[..., len(y_src):, :len(y_src)].transpose(1, 2)
+
+        # sim = self.attn(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        # sim = self.projection(y_src), self.projection(y_tgt)
+        # sim = torch.einsum(
+        #     "bci,bcj->bij",
+        #     e_src, e_tgt
+        #     # y_src - y_src.mean(-1, keepdim=True),
+        #     # y_tgt - y_tgt.mean(-1, keepdim=True)
+        # )
