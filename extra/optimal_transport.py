@@ -80,8 +80,8 @@ class SinkhornDistance(nn.Module):
     @staticmethod
     def _cost_matrix(x, y, p=2):
         "Returns the matrix of $|x_i-y_j|^p$."
-        x_col = x.unsqueeze(-2)
-        y_lin = y.unsqueeze(-3)
+        x_col = x.unsqueeze(-2).contiguous()
+        y_lin = y.unsqueeze(-3).contiguous()
         C = torch.sum((torch.abs(x_col - y_lin)) ** p, -1) ** (1 / p)
         return C
 
