@@ -246,6 +246,7 @@ if __name__ == '__main__':
     Net = mod.Net
 
     torch.manual_seed(cfg.RANDOM_SEED)
+    torch.autograd.anomaly_mode.set_detect_anomaly(True)
 
     dataset_len = {'train': cfg.TRAIN.EPOCH_ITERS * cfg.BATCH_SIZE, 'test': cfg.EVAL.SAMPLES}
     ds_dict = cfg[cfg.DATASET_FULL_NAME] if ('DATASET_FULL_NAME' in cfg) and (cfg.DATASET_FULL_NAME in cfg) else {}
