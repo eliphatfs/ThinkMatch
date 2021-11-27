@@ -116,14 +116,14 @@ class Net(nn.Module):
     def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
         resc = P_src.new_tensor(self.rescale)
         P_src, P_tgt = P_src / resc, P_tgt / resc
-        if self.training:
-            P_src = P_src + torch.randn(len(P_src), 1, 2) * 0.1
-            P_tgt = P_tgt + torch.randn(len(P_tgt), 1, 2) * 0.1
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
+        if self.training:
+            P_src = P_src + torch.randn_like(P_src)[..., :1] * 0.1
+            P_tgt = P_tgt + torch.randn_like(P_tgt)[..., :1] * 0.1
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
-        P_src = torch.cat((P_src, torch.ones_like(P_src)), 1)
+        P_src = torch.cat((P_src, torch.zeros_like(P_src)), 1)
         P_tgt = torch.cat((P_tgt / self.rescale[0], torch.ones_like(P_tgt)), 1)
         pcd = self.pf(torch.cat((P_src, P_tgt), -1))
         y_cat = torch.cat((y_src, y_tgt), -1)
