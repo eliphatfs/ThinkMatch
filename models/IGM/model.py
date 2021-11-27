@@ -83,7 +83,7 @@ class Net(nn.Module):
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
-        self.ot = SinkhornDistance(0.02, 10, 'mean')
+        self.ot = SinkhornDistance(1, 10, 'mean')
         self.backbone_params = list(self.resnet.parameters())
 
     @property
@@ -167,10 +167,14 @@ class Net(nn.Module):
                 folding_tgt[b: b + 1, :ns_tgt[b]],
             )[1].squeeze(0)
         if torch.rand(1) < 0.005:
-            print("S = ", sim[0].detach().cpu().numpy(), file=sys.stderr)
-            print("G = ", data_dict['gt_perm_mat'][0].detach().cpu().numpy(), file=sys.stderr)
-            print("Ps = ", folding_src[0].detach().cpu().numpy(), file=sys.stderr)
-            print("Pt = ", folding_tgt[0].detach().cpu().numpy(), file=sys.stderr)
+            print("S = ", file=sys.stderr)
+            print(sim[0].detach().cpu().numpy(), file=sys.stderr)
+            print("G = ", file=sys.stderr)
+            print(data_dict['gt_perm_mat'][0].detach().cpu().numpy(), file=sys.stderr)
+            print("Ps = ", file=sys.stderr)
+            print(folding_src[0].transpose(1, 2).detach().cpu().numpy(), file=sys.stderr)
+            print("Pt = ", file=sys.stderr)
+            print(folding_tgt[0].transpose(1, 2).detach().cpu().numpy(), file=sys.stderr)
         data_dict['ds_mat'] = sim
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
