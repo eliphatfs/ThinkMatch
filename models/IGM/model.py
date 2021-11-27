@@ -160,6 +160,8 @@ class Net(nn.Module):
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
         folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt).transpose(1, 2)
         folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src).transpose(1, 2)
+        folding_src = F.normalize(folding_src - folding_src.mean(-2, keepdim=True), dim=-1)
+        folding_tgt = F.normalize(folding_tgt - folding_tgt.mean(-2, keepdim=True), dim=-1)
         sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1]).to(y_src)
         for b in range(len(y_src)):
             sim[b, :ns_src[b], :ns_tgt[b]] = self.ot(
