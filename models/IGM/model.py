@@ -128,7 +128,7 @@ class Net(nn.Module):
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src)), 1)
-        P_tgt = torch.cat((P_tgt / self.rescale[0], torch.ones_like(P_tgt)), 1)
+        P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt)), 1)
         pcd = self.pf(torch.cat((P_src, P_tgt), -1))
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
