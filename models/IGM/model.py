@@ -39,7 +39,8 @@ def my_align(raw_feature, P, ori_size: tuple):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet = efficientnet_b4(True)  # UNet(3, 2)
+        self.resnet = efficientnet_b4()  # UNet(3, 2)
+        self.resnet.load_state_dict(torch.load("efficient_b4_pretrained.pt"))
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
         self.cls = ResCls(2, feature_lat, 2048, 1024)
