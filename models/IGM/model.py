@@ -27,7 +27,7 @@ class ResCls(nn.Module):
             d = torch.relu(verse(x))
             d = chorus(d)
             x = x + d
-        return self.outro(x)
+        return torch.relu(self.outro(x))
 
 
 def my_align(raw_feature, P, ori_size: tuple):
@@ -79,7 +79,6 @@ class Net(nn.Module):
             torch.nn.BatchNorm1d(256),
             torch.nn.ReLU(),
             torch.nn.Conv1d(256, 48, 1),
-            torch.nn.BatchNorm1d(48),
             torch.nn.ReLU(),
         )
         self.sinkhorn = Sinkhorn(
