@@ -160,14 +160,14 @@ class Net(nn.Module):
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
         folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)[..., 64:].transpose(1, 2)
         folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)[..., 64:].transpose(1, 2)
+        # for b in range(len(y_src)):
+        #     folding_src[b, ns_src[b]:] = folding_src[b, :ns_src[b]].mean(-2, keepdim=True)
+        #     folding_tgt[b, ns_tgt[b]:] = folding_tgt[b, :ns_tgt[b]].mean(-2, keepdim=True)
+        # folding_src = (folding_src - folding_src.min(-2, keepdim=True)[0]) / (folding_src.max(-2, keepdim=True)[0] - folding_src.min(-2, keepdim=True)[0] + 1e-8)
+        # folding_tgt = (folding_tgt - folding_tgt.min(-2, keepdim=True)[0]) / (folding_tgt.max(-2, keepdim=True)[0] - folding_tgt.min(-2, keepdim=True)[0] + 1e-8)
         for b in range(len(y_src)):
-            folding_src[b, ns_src[b]:] = folding_src[b, :ns_src[b]].mean(-2, keepdim=True)
-            folding_tgt[b, ns_tgt[b]:] = folding_tgt[b, :ns_tgt[b]].mean(-2, keepdim=True)
-        folding_src = (folding_src - folding_src.min(-2, keepdim=True)[0]) / (folding_src.max(-2, keepdim=True)[0] - folding_src.min(-2, keepdim=True)[0] + 1e-8)
-        folding_tgt = (folding_tgt - folding_tgt.min(-2, keepdim=True)[0]) / (folding_tgt.max(-2, keepdim=True)[0] - folding_tgt.min(-2, keepdim=True)[0] + 1e-8)
-        for b in range(len(y_src)):
-            folding_src[b, ns_src[b]:] = 0
-            folding_tgt[b, ns_tgt[b]:] = 0
+            folding_src[b, ns_src[b]:] = torch.randn_like(folding_src[b, ns_src[b]:])
+            folding_tgt[b, ns_tgt[b]:] = torch.randn_like(folding_src[b, ns_tgt[b]:])
         # sim = torch.zeros(y_src.shape[0], y_src.shape[-1] - 64, y_tgt.shape[-1] - 64).to(y_src)
         # for b in range(len(y_src)):
         #     sim[b, :ns_src[b], :ns_tgt[b]] = torch.clamp(self.ot(
@@ -175,8 +175,14 @@ class Net(nn.Module):
         #         folding_tgt[b: b + 1, :ns_tgt[b]],
         #     )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b]), 0, 1)
         sim = torch.cdist(folding_src, folding_tgt)
+        ds_src = torch.cdist(folding_src, folding_src)
+        ds_tgt = torch.cdist(folding_tgt, folding_tgt)
         bi = torch.arange(len(folding_src), device=folding_tgt.device).unsqueeze(-1)
-        data_dict['loss'] = F.mse_loss(folding_src, folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)])
+        data_dict['loss'] = (
+            F.mse_loss(folding_src, folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)])
+            - 0.3 * (1 / (1e-7 + ds_src.topk(2, dim=1, largest=False)[0])).mean()
+            - 0.3 * (1 / (1e-7 + ds_tgt.topk(2, dim=1, largest=False)[0])).mean()
+        )
         if torch.rand(1) < 0.005:
             print("S = ", file=sys.stderr)
             print(sim[0].detach().cpu().numpy(), file=sys.stderr)
