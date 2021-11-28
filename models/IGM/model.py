@@ -42,7 +42,7 @@ def my_align(raw_feature, P, ori_size: tuple):
 
 def my_cdist2(src, dst):  # BPC, BRC -> BPR
     # BP1C, B1RC -> BPRC -> BPR
-    return ((src.unsqueeze(-2).contiguous() - dst.unsqueeze(-3).contiguous()) ** 2).sum(-1)
+    return (((src.unsqueeze(-2).contiguous() - dst.unsqueeze(-3).contiguous()) ** 2).sum(-1) + 1e-8) ** 0.5
 
 
 class Net(nn.Module):
@@ -183,10 +183,11 @@ class Net(nn.Module):
         ds_src = my_cdist2(folding_src, folding_src)
         ds_tgt = my_cdist2(folding_tgt, folding_tgt)
         bi = torch.arange(len(folding_src), device=folding_tgt.device).unsqueeze(-1)
+        dist = (((folding_src - folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)]) ** 2).sum(-1) + 1e-8) ** 0.5
         data_dict['loss'] = (
-            F.mse_loss(folding_src, folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)])
-            + 0.15 * (1 / (1e-7 + 20 * ds_src.topk(2, dim=1, largest=False)[0][:, -1])).mean()
-            + 0.15 * (1 / (1e-7 + 20 * ds_tgt.topk(2, dim=1, largest=False)[0][:, -1])).mean()
+            - 0.30 * (1 / (1e-7 + 10 * dist)).mean()
+            + 0.15 * (1 / (1e-7 + 10 * ds_src.topk(2, dim=1, largest=False)[0][:, -1])).mean()
+            + 0.15 * (1 / (1e-7 + 10 * ds_tgt.topk(2, dim=1, largest=False)[0][:, -1])).mean()
         )
         if torch.rand(1) < 0.005:
             print("S = ", file=sys.stderr)
