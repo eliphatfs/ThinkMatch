@@ -252,6 +252,14 @@ class MBConvConfig:
         return int(math.ceil(num_layers * depth_mult))
 
 
+class SiLU(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x * torch.sigmoid(x)
+
+
 class MBConv(nn.Module):
     def __init__(
         self,
@@ -268,7 +276,7 @@ class MBConv(nn.Module):
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.out_channels
 
         layers: List[nn.Module] = []
-        activation_layer = nn.SiLU
+        activation_layer = SiLU
 
         # expand
         expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
@@ -298,7 +306,7 @@ class MBConv(nn.Module):
 
         # squeeze and excitation
         squeeze_channels = max(1, cnf.input_channels // 4)
-        layers.append(se_layer(expanded_channels, squeeze_channels, activation=partial(nn.SiLU, inplace=True)))
+        layers.append(se_layer(expanded_channels, squeeze_channels, activation=partial(SiLU, inplace=True)))
 
         # project
         layers.append(
@@ -363,7 +371,7 @@ class EfficientNet(nn.Module):
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(
             ConvNormActivation(
-                3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer, activation_layer=nn.SiLU
+                3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer, activation_layer=SiLU
             )
         )
 
@@ -398,7 +406,7 @@ class EfficientNet(nn.Module):
                 lastconv_output_channels,
                 kernel_size=1,
                 norm_layer=norm_layer,
-                activation_layer=nn.SiLU,
+                activation_layer=SiLU,
             )
         )
 
