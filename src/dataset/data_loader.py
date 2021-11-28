@@ -249,6 +249,18 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_list]
         if imgs[0] is not None:
+            if not self.test:
+                from extra.perspective import RandomPerspective
+                nimgs = []
+                nps = []
+                to_pil = transforms.ToPILImage()
+                rptr = RandomPerspective()
+                for img, p in zip(imgs, ret_dict['Ps']):
+                    img, p = rptr.forward(to_pil(img), p)
+                    nimgs.append(img)
+                    nps.append(p)
+                ret_dict['Ps'] = nps
+                imgs = nimgs
             trans = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
