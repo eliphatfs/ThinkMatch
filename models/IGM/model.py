@@ -75,7 +75,7 @@ class Net(nn.Module):
         )
         self.pe = torch.nn.Sequential(
             torch.nn.Conv1d(3072 + 256, 4096, 1),
-            torch.nn.BatchNorm1d(3072),
+            torch.nn.BatchNorm1d(4096),
             torch.nn.ReLU(),
             torch.nn.Conv1d(4096, 64, 1),
             torch.nn.BatchNorm1d(64),
