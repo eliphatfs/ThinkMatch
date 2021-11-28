@@ -59,15 +59,11 @@ class Net(nn.Module):
             torch.nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
         )
-        self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(2048 + 1024 + 256, 2048, 1),
-            torch.nn.BatchNorm1d(2048),
-            torch.nn.ReLU(),
-            torch.nn.Conv1d(2048, 32, 1)
-        )
+        self.pe = ResCls(0, 2048 + 1024 + 256, 2048, 768)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
+        self.fin_cls = ResCls(2, 768 * 2, 2048, 1)
         self.backbone_params = list(self.resnet.parameters())
 
     @property
@@ -145,10 +141,9 @@ class Net(nn.Module):
         e_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
         e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
 
-        sim = torch.einsum(
-            "bci,bcj->bij",
-            e_src, e_tgt
-        )
+        e_src = torch.cat((e_src, torch.zeros_like(e_src)), 1).unsqueeze(-1)
+        e_tgt = torch.cat((torch.zeros_like(e_tgt), e_tgt), 1).unsqueeze(-2)
+        sim = self.fin_cls(e_src + e_tgt).squeeze(1)
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
