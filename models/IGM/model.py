@@ -51,7 +51,7 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = nn.Identity()  # ResCls(1, feature_lat, 2048, 2048)
+        self.cls = ResCls(2, feature_lat, 2048, 48)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = torch.nn.Sequential(
@@ -78,7 +78,9 @@ class Net(nn.Module):
             torch.nn.Conv1d(4096, 256, 1),
             torch.nn.BatchNorm1d(256),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(256, 48, 1)
+            torch.nn.Conv1d(256, 48, 1),
+            torch.nn.BatchNorm1d(48),
+            torch.nn.ReLU(),
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
@@ -158,14 +160,14 @@ class Net(nn.Module):
         resc = P_src.new_tensor(self.rescale)
         rand_src, rand_tgt = torch.rand(len(P_src), 64, 2).to(P_src), torch.rand(len(P_tgt), 64, 2).to(P_tgt)
         P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
-        F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
+        y_src, y_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        e_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
-        e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
+        e2_src, e2_tgt = self.cls(y_src), self.cls(y_tgt)
+        e1_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
+        e1_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
         sim = torch.einsum(
             "bci,bcj->bij",
-            e_src, e_tgt
+            e1_src + e2_src, e1_tgt + e2_tgt
             # y_src - y_src.mean(-1, keepdim=True),
             # y_tgt - y_tgt.mean(-1, keepdim=True)
         )
