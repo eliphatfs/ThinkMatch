@@ -175,7 +175,7 @@ class Net(nn.Module):
         #         folding_tgt[b: b + 1, :ns_tgt[b]],
         #     )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b]), 0, 1)
         sim = torch.cdist(folding_src, folding_tgt)
-        bi = torch.arange(len(folding_src)).unsqueeze(-1).to(folding_tgt)
+        bi = torch.arange(len(folding_src), device=folding_tgt.device).unsqueeze(-1)
         data_dict['loss'] = F.mse_loss(folding_src, folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)])
         if torch.rand(1) < 0.005:
             print("S = ", file=sys.stderr)
