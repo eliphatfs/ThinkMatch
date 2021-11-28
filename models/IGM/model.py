@@ -47,7 +47,7 @@ class Net(nn.Module):
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = ResCls(1, 3, 128, 256)
         self.pn = ResCls(1, (1024 + 256) * 2, 2048, 2048, 2)
-        self.pe = ResCls(2, 3072 + 1024 + 256, 2048, 1, 2)
+        self.pe = ResCls(2, 2048 + (1024 + 256) * 2, 2048, 1, 2)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
