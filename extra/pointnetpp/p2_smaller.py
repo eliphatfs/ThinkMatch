@@ -38,7 +38,7 @@ class get_model(nn.Module):
         x = self.conv2(x)
         # x = F.log_softmax(x, dim=1)
         # x = x.permute(0, 2, 1)
-        return x, l3_points
+        return x
 
 
 class get_loss(nn.Module):
