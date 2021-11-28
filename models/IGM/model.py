@@ -1,4 +1,4 @@
-from torchvision.models import resnet34
+from models.IGM.efficientnet import efficientnet_b4
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,7 +39,7 @@ def my_align(raw_feature, P, ori_size: tuple):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet = resnet34(True)  # UNet(3, 2)
+        self.resnet = efficientnet_b4(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
         self.cls = ResCls(2, feature_lat, 2048, 1024)
@@ -59,20 +59,9 @@ class Net(nn.Module):
 
     def encode(self, x):
         r = self.resnet
-        x = r.conv1(x)
-        x = r.bn1(x)
-        x = r.relu(x)
-        yield x
-        x = r.maxpool(x)
-
-        x = r.layer1(x)
-        yield x
-        x = r.layer2(x)
-        yield x
-        x = r.layer3(x)
-        yield x
-        x = r.layer4(x)
-        yield x
+        for feat_layer in r.features:
+            x = feat_layer(x)
+            yield x
         x = r.avgpool(x)
         yield x
 
