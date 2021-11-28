@@ -47,8 +47,8 @@ class Net(nn.Module):
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = ResCls(0, 4, 128, 256)
         self.pn = ResCls(1, 1024 + 256, 2048, 2048)
-        self.pe = ResCls(1, 2048 + 1024 + 256, 2048, 64)
-        self.metric = ResCls(2, 2048, 64 * 64, 64 * 64, 0)
+        self.pe = ResCls(1, 2048 + 1024 + 256, 2048, 512)
+        self.metric = ResCls(2, 2048, 1024, 512, 0)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
@@ -111,10 +111,9 @@ class Net(nn.Module):
         pcd = self.pf(torch.cat((P_src, P_tgt), -1))
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = (self.pn(torch.cat((pcd, y_cat), 1)) * key_mask_cat).max(-1)[0]
-        Q = self.metric(pcc).reshape(-1, 64, 64)
-        metric = Q.bmm(Q.transpose(1, 2))
+        Q = torch.tanh(torch.diag_embed(self.metric(pcc).reshape(-1, 512)))
         pcc_b = pcc.unsqueeze(-1).expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]], metric
+        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]], Q
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
