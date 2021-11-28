@@ -74,7 +74,7 @@ class Net(nn.Module):
             torch.nn.ReLU(),
         )
         self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(1536 + 256 + feature_lat, 4096, 1),
+            torch.nn.Conv1d(1536 + feature_lat, 4096, 1),
             torch.nn.BatchNorm1d(4096),
             torch.nn.ReLU(),
             torch.nn.Conv1d(4096, 256, 1),
