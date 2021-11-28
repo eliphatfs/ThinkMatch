@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
-from torchvision.transforms.transforms import ColorJitter, RandomErasing, RandomPerspective, ToPILImage
 import torch_geometric as pyg
 import numpy as np
 import random
@@ -250,6 +249,17 @@ class GMDataset(Dataset):
         imgs = [anno['img'] for anno in anno_list]
         if imgs[0] is not None:
             if not self.test:
+                from extra.augmentations import RandomHorizontalFlip
+                nimgs = []
+                nps = []
+                to_pil = transforms.ToPILImage()
+                rptr = RandomHorizontalFlip()
+                for img, p in zip(imgs, ret_dict['Ps']):
+                    img, p = rptr.forward(to_pil(img), p)
+                    nimgs.append(img)
+                    nps.append(p)
+                ret_dict['Ps'] = nps
+                imgs = nimgs
                 trans = transforms.Compose([
                     transforms.ToPILImage(),
                     transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
@@ -258,17 +268,6 @@ class GMDataset(Dataset):
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
                 ])
             else:
-                # from extra.perspective import RandomPerspective
-                # nimgs = []
-                # nps = []
-                # to_pil = transforms.ToPILImage()
-                # rptr = RandomPerspective()
-                # for img, p in zip(imgs, ret_dict['Ps']):
-                #     img, p = rptr.forward(to_pil(img), p)
-                #     nimgs.append(img)
-                #     nps.append(p)
-                # ret_dict['Ps'] = nps
-                # imgs = nimgs
                 trans = transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
