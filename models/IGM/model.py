@@ -102,7 +102,7 @@ class Net(nn.Module):
             P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.ones_like(P_src[:, :1])), 1)
-        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src)[..., :y_src.shape[-1]]
+        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1))[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
