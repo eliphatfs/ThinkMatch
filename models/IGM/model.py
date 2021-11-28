@@ -130,7 +130,7 @@ class Net(nn.Module):
         ], 1)
         return F_src, F_tgt
 
-    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt):
+    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, ext=64):
         resc = P_src.new_tensor(self.rescale)
         P_src, P_tgt = P_src / resc, P_tgt / resc
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
@@ -146,7 +146,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        enc = self.pe(torch.cat((pcc_b, pcd), 1)[..., :y_src.shape[-1]]).transpose(1, 2)
+        enc = self.pe(torch.cat((pcc_b, pcd), 1)[..., ext: y_src.shape[-1]]).transpose(1, 2)
         mu, log_sigma = enc[..., :2], enc[..., 2:]
         return mu + torch.randn_like(log_sigma) * torch.exp(log_sigma)
 
@@ -165,8 +165,8 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)[..., 64:]
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)[..., 64:]
+        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
+        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
         # for b in range(len(y_src)):
         #     folding_src[b, ns_src[b]:] = folding_src[b, :ns_src[b]].mean(-2, keepdim=True)
         #     folding_tgt[b, ns_tgt[b]:] = folding_tgt[b, :ns_tgt[b]].mean(-2, keepdim=True)
