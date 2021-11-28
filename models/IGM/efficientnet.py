@@ -5,7 +5,6 @@ from typing import Any, Callable, Optional, List, Sequence
 
 import torch
 from torch import nn, Tensor
-from torchvision.ops import StochasticDepth
 
 try:
     from torch.hub import load_state_dict_from_url  # noqa: 401
