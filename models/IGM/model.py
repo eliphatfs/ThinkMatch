@@ -80,7 +80,7 @@ class Net(nn.Module):
             torch.nn.Conv1d(4096, 256, 1),
             torch.nn.BatchNorm1d(256),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(256, 24, 1)
+            torch.nn.Conv1d(256, 48, 1)
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
@@ -132,7 +132,7 @@ class Net(nn.Module):
 
     def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, ext=64):
         resc = P_src.new_tensor(self.rescale)
-        P_src, P_tgt = P_src / resc, P_tgt / resc ** 2
+        P_src, P_tgt = P_src / resc, P_tgt / resc
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
         if self.training:
             P_src = P_src + torch.randn_like(P_src)[..., :1] * 0.1
@@ -146,7 +146,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1)[..., ext: y_src.shape[-1]])
+        return self.pe(torch.cat((pcc_b, pcd), 1)[..., ext: y_src.shape[-1]])
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
