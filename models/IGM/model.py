@@ -72,10 +72,7 @@ class Net(nn.Module):
             torch.nn.Conv1d(3072 + 256, 3072, 1),
             torch.nn.BatchNorm1d(3072),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(3072, 1024, 1),
-            torch.nn.BatchNorm1d(1024),
-            torch.nn.ReLU(),
-            torch.nn.Conv1d(1024, 256, 1),
+            torch.nn.Conv1d(3072, 256, 1),
             torch.nn.BatchNorm1d(256),
             torch.nn.ReLU(),
             torch.nn.Conv1d(256, 2, 1)
@@ -168,12 +165,18 @@ class Net(nn.Module):
             folding_tgt[b, ns_tgt[b]:] = folding_tgt[b, :ns_tgt[b]].mean(-2, keepdim=True)
         folding_src = (folding_src - folding_src.min(-2, keepdim=True)[0]) / (folding_src.max(-2, keepdim=True)[0] - folding_src.min(-2, keepdim=True)[0] + 1e-8)
         folding_tgt = (folding_tgt - folding_tgt.min(-2, keepdim=True)[0]) / (folding_tgt.max(-2, keepdim=True)[0] - folding_tgt.min(-2, keepdim=True)[0] + 1e-8)
-        sim = torch.zeros(y_src.shape[0], y_src.shape[-1] - 64, y_tgt.shape[-1] - 64).to(y_src)
         for b in range(len(y_src)):
-            sim[b, :ns_src[b], :ns_tgt[b]] = torch.clamp(self.ot(
-                folding_src[b: b + 1, :ns_src[b]],
-                folding_tgt[b: b + 1, :ns_tgt[b]],
-            )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b]), 0, 1)
+            folding_src[b, ns_src[b]:] = 0
+            folding_tgt[b, ns_tgt[b]:] = 0
+        # sim = torch.zeros(y_src.shape[0], y_src.shape[-1] - 64, y_tgt.shape[-1] - 64).to(y_src)
+        # for b in range(len(y_src)):
+        #     sim[b, :ns_src[b], :ns_tgt[b]] = torch.clamp(self.ot(
+        #         folding_src[b: b + 1, :ns_src[b]],
+        #         folding_tgt[b: b + 1, :ns_tgt[b]],
+        #     )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b]), 0, 1)
+        sim = torch.cdist(folding_src, folding_tgt)
+        bi = torch.arange(len(folding_src)).unsqueeze(-1).to(folding_tgt)
+        data_dict['loss'] = F.huber_loss(folding_src, folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)])
         if torch.rand(1) < 0.005:
             print("S = ", file=sys.stderr)
             print(sim[0].detach().cpu().numpy(), file=sys.stderr)
@@ -183,7 +186,7 @@ class Net(nn.Module):
             print(folding_src[0].t().detach().cpu().numpy(), file=sys.stderr)
             print("Pt = ", file=sys.stderr)
             print(folding_tgt[0][data_dict['gt_perm_mat'][0].argmax(-1)].t().detach().cpu().numpy(), file=sys.stderr)
-        data_dict['ds_mat'] = sim
+        data_dict['ds_mat'] = -sim
         try:
             data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         except Exception:
