@@ -250,14 +250,14 @@ class GMDataset(Dataset):
         if imgs[0] is not None:
             if not self.test:
                 from extra.augmentations import RandomHorizontalFlip
-                from extra.perspective import RandomPerspective
+                # from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
                 r1 = RandomHorizontalFlip()
-                r2 = RandomPerspective()
+                # r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r2.forward(*r1.forward(to_pil(img), p))
+                    img, p = r1.forward(to_pil(img), p)
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
