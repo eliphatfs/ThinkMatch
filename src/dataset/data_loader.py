@@ -249,7 +249,7 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_list]
         if imgs[0] is not None:
-            if not self.test:
+            """if not self.test:
                 from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
@@ -260,7 +260,7 @@ class GMDataset(Dataset):
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
-                imgs = nimgs
+                imgs = nimgs"""
             trans = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
