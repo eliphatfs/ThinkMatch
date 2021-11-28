@@ -161,7 +161,7 @@ class Net(nn.Module):
         P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
         y_src, y_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        e2_src, e2_tgt = self.cls(y_src), self.cls(y_tgt)
+        e2_src, e2_tgt = self.cls(y_src[..., 64:]), self.cls(y_tgt[..., 64:])
         e1_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
         e1_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
         sim = torch.einsum(
