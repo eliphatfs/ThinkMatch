@@ -240,7 +240,7 @@ class PointNetSetAbstractionMsg(nn.Module):
             points = points.permute(0, 2, 1)
 
         B, N, C = xyz.shape
-        S = self.npoint
+        S = N
         new_xyz = index_points(xyz, farthest_point_sample(xyz, S))
         new_points_list = []
         for i, radius in enumerate(self.radius_list):
