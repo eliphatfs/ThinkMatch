@@ -182,8 +182,8 @@ class Net(nn.Module):
             # y_tgt - y_tgt.mean(-1, keepdim=True)
         )
         if torch.rand(1) < 0.01:
-            print(gate_src.flatten().detach().cpu().numpy(), sys.stderr)
-            print(gate_tgt.flatten().detach().cpu().numpy(), sys.stderr)
+            print("S", gate_src.flatten().detach().cpu().numpy(), file=sys.stderr)
+            print("T", gate_tgt.flatten().detach().cpu().numpy(), file=sys.stderr)
         data_dict['ds_mat'] = self.sinkhorn(sim)
         try:
             data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
