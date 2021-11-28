@@ -42,7 +42,7 @@ class Net(nn.Module):
         self.resnet = efficientnet_b4()  # UNet(3, 2)
         self.resnet.load_state_dict(torch.load("efficient_b4_pretrained.pt"))
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
+        feature_lat = 4736
         self.cls = ResCls(2, feature_lat, 2048, 1024)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
