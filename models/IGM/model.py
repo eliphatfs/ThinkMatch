@@ -40,6 +40,11 @@ def my_align(raw_feature, P, ori_size: tuple):
     ).squeeze(-1)
 
 
+def my_cdist2(src, dst):  # BPC, BRC -> BPR
+    # BP1C, B1RC -> BPRC -> BPR
+    return ((src.unsqueeze(-2).contiguous() - dst.unsqueeze(-3).contiguous()) ** 2).sum(-1)
+
+
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
@@ -174,9 +179,9 @@ class Net(nn.Module):
         #         folding_src[b: b + 1, :ns_src[b]],
         #         folding_tgt[b: b + 1, :ns_tgt[b]],
         #     )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b]), 0, 1)
-        sim = torch.cdist(folding_src, folding_tgt)
-        ds_src = torch.cdist(folding_src, folding_src)
-        ds_tgt = torch.cdist(folding_tgt, folding_tgt)
+        sim = my_cdist2(folding_src, folding_tgt)
+        ds_src = my_cdist2(folding_src, folding_src)
+        ds_tgt = my_cdist2(folding_tgt, folding_tgt)
         bi = torch.arange(len(folding_src), device=folding_tgt.device).unsqueeze(-1)
         data_dict['loss'] = (
             F.mse_loss(folding_src, folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)])
