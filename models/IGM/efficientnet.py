@@ -168,7 +168,7 @@ class ConvNormActivation(torch.nn.Sequential):
         if norm_layer is not None:
             layers.append(norm_layer(out_channels))
         if activation_layer is not None:
-            layers.append(activation_layer(inplace=inplace))
+            layers.append(activation_layer())
         super().__init__(*layers)
         _log_api_usage_once(self)
         self.out_channels = out_channels
@@ -306,7 +306,7 @@ class MBConv(nn.Module):
 
         # squeeze and excitation
         squeeze_channels = max(1, cnf.input_channels // 4)
-        layers.append(se_layer(expanded_channels, squeeze_channels, activation=partial(SiLU, inplace=True)))
+        layers.append(se_layer(expanded_channels, squeeze_channels, activation=SiLU))
 
         # project
         layers.append(
