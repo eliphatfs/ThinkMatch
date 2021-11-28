@@ -128,8 +128,8 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 32 + ns_src, 32 + ns_tgt)[..., 32:].transpose(1, 2)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 32 + ns_tgt, 32 + ns_src)[..., 32:].transpose(1, 2)
+        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 32 + ns_src, 32 + ns_tgt)[..., 32:]
+        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 32 + ns_tgt, 32 + ns_src)[..., 32:]
 
         sim = torch.einsum(
             "bci,bcj->bij",
