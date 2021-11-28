@@ -43,10 +43,10 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(2, feature_lat, 1024, 64)
+        self.cls = ResCls(2, feature_lat, 1024, 128)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(64)
+        self.pn = p2_smaller.get_model(128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
@@ -118,11 +118,15 @@ class Net(nn.Module):
         # P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
+        y_src, y_tgt = F.normalize(self.cls(F_src), dim=1), F.normalize(self.cls(F_tgt), dim=1)
         folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
         folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
 
-        sim = F.cosine_similarity(folding_src.unsqueeze(-1), folding_tgt.unsqueeze(-2))
+        sim = torch.einsum(
+            'bci,bcj->bij',
+            folding_src.unsqueeze(-1),
+            folding_tgt.unsqueeze(-2)
+        )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
