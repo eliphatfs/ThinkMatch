@@ -121,8 +121,9 @@ class Net(nn.Module):
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
 
-        sim = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        sim1 = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        sim2 = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src).transpose(1, 2)
         
-        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        data_dict['ds_mat'] = self.sinkhorn(sim1 + sim2, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
