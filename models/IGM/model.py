@@ -51,7 +51,7 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(2, feature_lat, 2048, 48)
+        self.cls = ResCls(2, feature_lat, 2048, 32)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = torch.nn.Sequential(
@@ -78,13 +78,23 @@ class Net(nn.Module):
             torch.nn.Conv1d(4096, 256, 1),
             torch.nn.BatchNorm1d(256),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(256, 48, 1),
-            torch.nn.ReLU(),
+            torch.nn.Conv1d(256, 32, 1)
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
         self.ot = SinkhornDistance(0.01, 10, 'mean')
+        self.gater = torch.nn.Sequential(
+            torch.nn.Conv2d(512, 1024, 1),
+            torch.nn.BatchNorm2d(1024),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(1024, 1024, 1),
+            torch.nn.BatchNorm2d(1024),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(1024, 1, 1),
+            torch.nn.Flatten(2),
+            torch.nn.Sigmoid()
+        )
         self.backbone_params = list(self.resnet.parameters())
 
     @property
@@ -129,7 +139,7 @@ class Net(nn.Module):
         ], 1)
         return F_src, F_tgt
 
-    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, ext=64):
+    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, ext=32):
         resc = P_src.new_tensor(self.rescale)
         P_src, P_tgt = P_src / resc, P_tgt / resc
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
@@ -145,7 +155,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd), 1)[..., ext: y_src.shape[-1]])
+        return self.pe(torch.cat((pcc_b, pcd), 1))[..., ext: y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -157,16 +167,17 @@ class Net(nn.Module):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
         resc = P_src.new_tensor(self.rescale)
-        rand_src, rand_tgt = torch.rand(len(P_src), 64, 2).to(P_src), torch.rand(len(P_tgt), 64, 2).to(P_tgt)
+        rand_src, rand_tgt = torch.rand(len(P_src), 32, 2).to(P_src), torch.rand(len(P_tgt), 32, 2).to(P_tgt)
         P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
         y_src, y_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
-
-        e2_src, e2_tgt = self.cls(y_src[..., 64:]), self.cls(y_tgt[..., 64:])
-        e1_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
-        e1_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
+        gate_src, gate_tgt = self.gater(feat_srcs[-1]), self.gater(feat_tgts[-1])
+        e2_src, e2_tgt = self.cls(y_src)[..., 32:], self.cls(y_tgt)[..., 32:]
+        e1_src = self.points(y_src, y_tgt, P_src, P_tgt, 32 + ns_src, 32 + ns_tgt)
+        e1_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 32 + ns_tgt, 32 + ns_src)
         sim = torch.einsum(
             "bci,bcj->bij",
-            e1_src + e2_src, e1_tgt + e2_tgt
+            e1_src * gate_src + e2_src * (1 - gate_src),
+            e1_tgt * gate_tgt + e2_tgt * (1 - gate_tgt)
             # y_src - y_src.mean(-1, keepdim=True),
             # y_tgt - y_tgt.mean(-1, keepdim=True)
         )
