@@ -122,14 +122,11 @@ class Net(nn.Module):
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
-        resc = P_src.new_tensor(self.rescale)
-        rand_src, rand_tgt = torch.rand(len(P_src), 32, 2).to(P_src), torch.rand(len(P_tgt), 32, 2).to(P_tgt)
-        P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 32 + ns_src, 32 + ns_tgt)[..., 32:]
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 32 + ns_tgt, 32 + ns_src)[..., 32:]
+        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
 
         sim = torch.einsum(
             "bci,bcj->bij",
