@@ -24,8 +24,8 @@ GPUS:
 PROBLEM:
   TYPE: 2GM
   RESCALE:  # rescaled image size
-    - 256
-    - 256
+    - 224
+    - 224
   FILTER: 'intersection'
 
 # Graph construction settings
