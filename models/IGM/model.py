@@ -104,7 +104,7 @@ class Net(nn.Module):
         pcd = e_src + e_tgt
         mask = key_mask_src.unsqueeze(-1) & key_mask_tgt.unsqueeze(-2)
 
-        pcc = (self.pn(pcd) * mask).flatten(2).max(-1)[0].unsqueeze(-1).unsqueeze(-1)
+        pcc = (self.pn(pcd) * mask.unsqueeze(1)).flatten(2).max(-1)[0].unsqueeze(-1).unsqueeze(-1)
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], pcd.shape[-2], pcd.shape[-1])
         return self.pe(torch.cat((pcc_b, pcd), 1)).squeeze(1)
 
