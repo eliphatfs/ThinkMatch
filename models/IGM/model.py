@@ -46,8 +46,9 @@ class Net(nn.Module):
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = ResCls(0, 4, 128, 256)
-        self.pn = ResCls(1, 1024 + 256, 1536, 1536)
-        self.pe = ResCls(1, 1536 + 1024 + 256, 2048, 64)
+        self.pn = ResCls(1, 1024 + 256, 2048, 2048)
+        self.pe = ResCls(1, 2048 + 1024 + 256, 2048, 64)
+        self.metric = ResCls(2, 2048, 64 * 64, 64 * 64, 0)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
@@ -110,8 +111,10 @@ class Net(nn.Module):
         pcd = self.pf(torch.cat((P_src, P_tgt), -1))
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = (self.pn(torch.cat((pcd, y_cat), 1)) * key_mask_cat).max(-1, keepdim=True)[0]
+        Q = self.metric(pcc).reshape(-1, 64, 64)
+        metric = Q.bmm(Q.transpose(1, 2))
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]]
+        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1))[..., :y_src.shape[-1]], metric
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -125,12 +128,12 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
+        folding_src, m1 = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
+        folding_tgt, m2 = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
 
         sim = torch.einsum(
-            "bci,bcj->bij",
-            folding_src, folding_tgt
+            "bxi,bxy,byj->bij",
+            folding_src, m1 + m2, folding_tgt
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
