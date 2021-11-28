@@ -59,9 +59,20 @@ class Net(nn.Module):
 
     def encode(self, x):
         r = self.resnet
-        for feat_layer in r.features:
-            x = feat_layer(x)
-            yield x
+        x = r.conv1(x)
+        x = r.bn1(x)
+        x = r.relu(x)
+        yield x
+        x = r.maxpool(x)
+
+        x = r.layer1(x)
+        yield x
+        x = r.layer2(x)
+        yield x
+        x = r.layer3(x)
+        yield x
+        x = r.layer4(x)
+        yield x
         x = r.avgpool(x)
         yield x
 
