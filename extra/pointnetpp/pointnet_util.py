@@ -240,11 +240,11 @@ class PointNetSetAbstractionMsg(nn.Module):
             points = points.permute(0, 2, 1)
 
         B, N, C = xyz.shape
-        S = N
+        S = min(N, self.npoint)
         new_xyz = index_points(xyz, farthest_point_sample(xyz, S))
         new_points_list = []
         for i, radius in enumerate(self.radius_list):
-            K = self.nsample_list[i]
+            K = min(S, self.nsample_list[i])
             group_idx = query_ball_point(radius, K, xyz, new_xyz)
             grouped_xyz = index_points(xyz, group_idx)
             grouped_xyz -= new_xyz.view(B, S, 1, C)
