@@ -8,7 +8,7 @@ class get_model(nn.Module):
     def __init__(self, additional_channel):
         super(get_model, self).__init__()
         self.normal_channel = True
-        self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.4], [16, 32, 64], 3 + additional_channel, [[64, 128], [64, 256], [64, 128]])
+        self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.4], [16, 32, 64], 3 + additional_channel, [[128], [256], [128]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 3, mlp=[512, 1024], group_all=True)
         self.fp3 = PointNetFeaturePropagation(in_channel=1536, mlp=[1024, 1024])
         self.fp1 = PointNetFeaturePropagation(in_channel=1030 + additional_channel, mlp=[512, 512])
