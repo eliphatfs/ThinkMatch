@@ -168,7 +168,7 @@ class Net(nn.Module):
             folding_tgt[b, ns_tgt[b]:] = folding_tgt[b, :ns_tgt[b]].mean(-2, keepdim=True)
         folding_src = (folding_src - folding_src.min(-2, keepdim=True)[0]) / (folding_src.max(-2, keepdim=True)[0] - folding_src.min(-2, keepdim=True)[0] + 1e-8)
         folding_tgt = (folding_tgt - folding_tgt.min(-2, keepdim=True)[0]) / (folding_tgt.max(-2, keepdim=True)[0] - folding_tgt.min(-2, keepdim=True)[0] + 1e-8)
-        sim = torch.zeros(y_src.shape[0], y_src.shape[-1], y_tgt.shape[-1]).to(y_src)
+        sim = torch.zeros(y_src.shape[0], y_src.shape[-1] - 64, y_tgt.shape[-1]).to(y_src)
         for b in range(len(y_src)):
             sim[b, :ns_src[b], :ns_tgt[b]] = torch.clamp(self.ot(
                 folding_src[b: b + 1, :ns_src[b]],
