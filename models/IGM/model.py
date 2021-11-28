@@ -66,21 +66,21 @@ class Net(nn.Module):
             torch.nn.Conv1d(feature_lat + 256, 2048, 1),
             torch.nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(2048, 3072, 1),
-            torch.nn.BatchNorm1d(3072),
+            torch.nn.Conv1d(2048, 1536, 1),
+            torch.nn.BatchNorm1d(1536),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(3072, 3072, 1),
-            torch.nn.BatchNorm1d(3072),
+            torch.nn.Conv1d(1536, 1536, 1),
+            torch.nn.BatchNorm1d(1536),
             torch.nn.ReLU(),
         )
         self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(3072 + 256, 4096, 1),
+            torch.nn.Conv1d(1536 + 256 + feature_lat, 4096, 1),
             torch.nn.BatchNorm1d(4096),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(4096, 64, 1),
-            torch.nn.BatchNorm1d(64),
+            torch.nn.Conv1d(4096, 256, 1),
+            torch.nn.BatchNorm1d(256),
             torch.nn.ReLU(),
-            torch.nn.Conv1d(64, 3, 1)
+            torch.nn.Conv1d(256, 24, 1)
         )
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
@@ -146,9 +146,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
         pcc_b = pcc.expand(pcc.shape[0], pcc.shape[1], y_cat.shape[-1])
-        enc = self.pe(torch.cat((pcc_b, pcd), 1)[..., ext: y_src.shape[-1]]).transpose(1, 2)
-        mu, log_sigma = enc[..., :2], enc[..., 2:]
-        return mu + torch.randn_like(log_sigma) * torch.exp(log_sigma)
+        return self.pe(torch.cat((pcc_b, pcd, y_cat), 1)[..., ext: y_src.shape[-1]])
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -165,42 +163,15 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
-        # for b in range(len(y_src)):
-        #     folding_src[b, ns_src[b]:] = folding_src[b, :ns_src[b]].mean(-2, keepdim=True)
-        #     folding_tgt[b, ns_tgt[b]:] = folding_tgt[b, :ns_tgt[b]].mean(-2, keepdim=True)
-        # folding_src = (folding_src - folding_src.min(-2, keepdim=True)[0]) / (folding_src.max(-2, keepdim=True)[0] - folding_src.min(-2, keepdim=True)[0] + 1e-8)
-        # folding_tgt = (folding_tgt - folding_tgt.min(-2, keepdim=True)[0]) / (folding_tgt.max(-2, keepdim=True)[0] - folding_tgt.min(-2, keepdim=True)[0] + 1e-8)
-        for b in range(len(y_src)):
-            folding_src[b, ns_src[b]:] = torch.randn_like(folding_src[b, ns_src[b]:])
-            folding_tgt[b, ns_tgt[b]:] = torch.randn_like(folding_src[b, ns_tgt[b]:])
-        # sim = torch.zeros(y_src.shape[0], y_src.shape[-1] - 64, y_tgt.shape[-1] - 64).to(y_src)
-        # for b in range(len(y_src)):
-        #     sim[b, :ns_src[b], :ns_tgt[b]] = torch.clamp(self.ot(
-        #         folding_src[b: b + 1, :ns_src[b]],
-        #         folding_tgt[b: b + 1, :ns_tgt[b]],
-        #     )[1].squeeze(0) * torch.min(ns_src[b], ns_tgt[b]), 0, 1)
-        sim = my_cdist2(folding_src, folding_tgt)
-        ds_src = my_cdist2(folding_src, folding_src)
-        ds_tgt = my_cdist2(folding_tgt, folding_tgt)
-        bi = torch.arange(len(folding_src), device=folding_tgt.device).unsqueeze(-1)
-        dist = (((folding_src - folding_tgt[bi, data_dict['gt_perm_mat'][0].argmax(-1)]) ** 2).sum(-1) + 1e-8) ** 0.5
-        data_dict['loss'] = (
-            - (1 / (1e-7 + dist)).mean()
-            + (1 / (1e-7 + ds_src.topk(2, dim=1, largest=False)[0][:, -1])).mean()
-            + (1 / (1e-7 + ds_tgt.topk(2, dim=1, largest=False)[0][:, -1])).mean()
+        e_src = self.points(y_src, y_tgt, P_src, P_tgt, 64 + ns_src, 64 + ns_tgt)
+        e_tgt = self.points(y_tgt, y_src, P_tgt, P_src, 64 + ns_tgt, 64 + ns_src)
+        sim = torch.einsum(
+            "bci,bcj->bij",
+            e_src, e_tgt
+            # y_src - y_src.mean(-1, keepdim=True),
+            # y_tgt - y_tgt.mean(-1, keepdim=True)
         )
-        if torch.rand(1) < 0.005:
-            print("S = ", file=sys.stderr)
-            print((sim[0] / sim[0].max()).detach().cpu().numpy(), file=sys.stderr)
-            print("G = ", file=sys.stderr)
-            print(data_dict['gt_perm_mat'][0].detach().cpu().numpy(), file=sys.stderr)
-            print("Ps = ", file=sys.stderr)
-            print(folding_src[0].t().detach().cpu().numpy(), file=sys.stderr)
-            print("Pt = ", file=sys.stderr)
-            print(folding_tgt[0][data_dict['gt_perm_mat'][0].argmax(-1)].t().detach().cpu().numpy(), file=sys.stderr)
-        data_dict['ds_mat'] = -sim
+        data_dict['ds_mat'] = self.sinkhorn(sim)
         try:
             data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         except Exception:
