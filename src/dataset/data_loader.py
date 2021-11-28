@@ -86,7 +86,10 @@ class GMDataset(Dataset):
         #anno_pair, perm_mat = self.bm.get_pair(self.cls if self.cls is not None else
         #                                       (idx % (cfg.BATCH_SIZE * len(self.classes))) // cfg.BATCH_SIZE)
         cls_num = random.randrange(0, len(self.classes))
-        ids = list(self.id_combination[cls_num][idx % self.length_list[cls_num]])
+        if self.test:
+            ids = list(self.id_combination[cls_num][idx % self.length_list[cls_num]])
+        else:
+            ids = list(self.id_combination[cls_num][random.randrange(0, self.length_list[cls_num])])
         anno_pair, perm_mat_, id_list = self.bm.get_data(ids)
         perm_mat = perm_mat_[(0, 1)].toarray()
         while min(perm_mat.shape[0], perm_mat.shape[1]) <= 2 or perm_mat.size >= cfg.PROBLEM.MAX_PROB_SIZE > 0:
