@@ -193,7 +193,7 @@ class Net(nn.Module):
         )
         if torch.rand(1) < 0.005:
             print("S = ", file=sys.stderr)
-            print(sim[0].detach().cpu().numpy() / sim[0].max(), file=sys.stderr)
+            print((sim[0] / sim[0].max()).detach().cpu().numpy(), file=sys.stderr)
             print("G = ", file=sys.stderr)
             print(data_dict['gt_perm_mat'][0].detach().cpu().numpy(), file=sys.stderr)
             print("Ps = ", file=sys.stderr)
