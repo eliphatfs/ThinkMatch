@@ -55,15 +55,13 @@ class Net(nn.Module):
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pf = torch.nn.Sequential(
-            torch.nn.Conv1d(4, 64, 1),
-            torch.nn.BatchNorm1d(64),
-            torch.nn.ReLU(),
-            torch.nn.Conv1d(64, 256, 1),
+            torch.nn.Conv1d(4, 256, 1),
             torch.nn.BatchNorm1d(256),
-            torch.nn.ReLU()
+            torch.nn.ReLU(),
+            torch.nn.Conv1d(256, 128, 1)
         )
         self.pn = torch.nn.Sequential(
-            torch.nn.Conv1d(feature_lat + 256, 2048, 1),
+            torch.nn.Conv1d(feature_lat + 128, 2048, 1),
             torch.nn.BatchNorm1d(2048),
             torch.nn.ReLU(),
             torch.nn.Conv1d(2048, 1536, 1),
@@ -74,7 +72,7 @@ class Net(nn.Module):
             torch.nn.ReLU(),
         )
         self.pe = torch.nn.Sequential(
-            torch.nn.Conv1d(1536 + feature_lat, 4096, 1),
+            torch.nn.Conv1d(1536 + 128, 4096, 1),
             torch.nn.BatchNorm1d(4096),
             torch.nn.ReLU(),
             torch.nn.Conv1d(4096, 256, 1),
