@@ -132,7 +132,7 @@ class Net(nn.Module):
 
     def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, ext=64):
         resc = P_src.new_tensor(self.rescale)
-        P_src, P_tgt = P_src / resc, P_tgt / resc
+        P_src, P_tgt = P_src / resc, P_tgt / resc ** 2
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
         if self.training:
             P_src = P_src + torch.randn_like(P_src)[..., :1] * 0.1
@@ -141,7 +141,7 @@ class Net(nn.Module):
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src)), 1)
-        P_tgt = torch.cat((P_tgt / resc, torch.ones_like(P_tgt)), 1)
+        P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt)), 1)
         pcd = self.pf(torch.cat((P_src, P_tgt), -1))
         y_cat = torch.cat((y_src, y_tgt), -1)
         pcc = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat).max(-1, keepdim=True)[0]
