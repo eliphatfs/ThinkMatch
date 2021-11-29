@@ -146,7 +146,7 @@ class GMDataset(Dataset):
                 imgs = nimgs
                 trans = transforms.Compose([
                     transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-                    RandomAdjustSharpness(),
+                    # RandomAdjustSharpness(),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
