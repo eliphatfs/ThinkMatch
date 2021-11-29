@@ -2,7 +2,7 @@ import torch
 from PIL import Image, ImageEnhance
 
 
-class RandomHorizontalFlip:
+class RandomHorizontalFlip(torch.nn.Module):
     def forward(self, img: Image.Image, p):
         if torch.rand(1) < 0.5:
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -10,7 +10,7 @@ class RandomHorizontalFlip:
         return img, p
 
 
-class RandomAdjustSharpness:
+class RandomAdjustSharpness(torch.nn.Module):
     def __init__(self, p=0.4) -> None:
         self.p = p
 
