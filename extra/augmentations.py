@@ -11,7 +11,9 @@ class RandomHorizontalFlip(torch.nn.Module):
     def forward(self, img: Image.Image, p):
         if torch.rand(1) < 0.5:
             # draw_kps(img, p, "before.png")
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img = img.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_LEFT_RIGHT)
+            p = p.clone()
+            p[..., 0] = img.width - 1 - p[..., 0]
             p = p.clone()
             p[..., 0] = img.width - 1 - p[..., 0]
             # draw_kps(img, p, "after.png")
