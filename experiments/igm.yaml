@@ -40,13 +40,13 @@ TRAIN:
   START_EPOCH: 0
   NUM_EPOCHS: 20
 
-  LOSS_FUNC: perm
+  LOSS_FUNC: focal
 
   # learning rate
   OPTIMIZER: sgd
-  LR: 0.01
+  LR: 0.02
   SEPARATE_BACKBONE_LR: False
-  BACKBONE_LR: 0.01
+  BACKBONE_LR: 0.02
   MOMENTUM: 0.9
   LR_DECAY: 0.316
   LR_STEP:  # (in epochs)
