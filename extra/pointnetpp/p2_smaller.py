@@ -14,7 +14,7 @@ class get_model(nn.Module):
         self.normal_channel = True
         self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2], [24, 24], 3 + additional_channel, [[64, 128], [128, 256]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=384 + 3, mlp=[512, 1024], group_all=True)
-        self.fp3 = PointNetFeaturePropagation(in_channel=1536, mlp=[1024, 512])
+        self.fp3 = PointNetFeaturePropagation(in_channel=1408, mlp=[1024, 512])
         self.fp1 = PointNetFeaturePropagation(in_channel=518 + len(labels) + additional_channel, mlp=[512, 512])
         self.conv1 = nn.Conv1d(512, 32, 1)
 
