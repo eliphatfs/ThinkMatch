@@ -40,7 +40,7 @@ TRAIN:
   START_EPOCH: 0
   NUM_EPOCHS: 20
 
-  LOSS_FUNC: focal
+  LOSS_FUNC: ce
 
   # learning rate
   OPTIMIZER: sgd
