@@ -38,6 +38,20 @@ def my_align(raw_feature, P, ori_size: tuple):
     ).squeeze(-1)
 
 
+def batch_features(embeddings, num_vertices):
+    res = torch.cat([embedding[:, :num_v] for embedding, num_v in zip(embeddings, num_vertices)], dim=-1)
+    return res.transpose(0, 1)
+
+
+def unbatch_features(orig, embeddings, num_vertices):
+    res = torch.zeros_like(orig)
+    cum = 0
+    for embedding, num_v in zip(res, num_vertices):
+        embedding[:, :num_v] = embeddings[cum: cum + num_v]
+        cum = cum + num_v
+    return res
+
+
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
@@ -127,7 +141,8 @@ class Net(nn.Module):
 
         G_src, G_tgt = data_dict['pyg_graphs']
         G_src.x, G_tgt.x = F_src, F_tgt
-        F_src, F_tgt = self.sconv(G_src), self.sconv(G_tgt)
+        F_src = unbatch_features(self.sconv(batch_features(G_src)))
+        F_tgt = unbatch_features(self.sconv(batch_features(G_tgt)))
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
