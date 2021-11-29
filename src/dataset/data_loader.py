@@ -15,6 +15,9 @@ from src.utils.config import cfg
 from itertools import combinations, product
 
 
+pnt = False
+
+
 class GMDataset(Dataset):
     def __init__(self, name, bm, length, using_all_graphs=False, cls=None, problem='2GM', augment=False):
         self.name = name
@@ -84,6 +87,7 @@ class GMDataset(Dataset):
         return pyg_graph
 
     def get_pair(self, idx, cls):
+        global pnt
         #anno_pair, perm_mat = self.bm.get_pair(self.cls if self.cls is not None else
         #                                       (idx % (cfg.BATCH_SIZE * len(self.classes))) // cfg.BATCH_SIZE)
         cls_num = random.randrange(0, len(self.classes))
@@ -132,6 +136,9 @@ class GMDataset(Dataset):
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
             if self.augment:
+                if not pnt:
+                    print("AUGMENT")
+                    pnt = True
                 from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness, RandomPerspective
                 # from extra.perspective import RandomPerspective
                 nimgs = []
