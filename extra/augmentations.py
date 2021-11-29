@@ -12,6 +12,7 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 class RandomAdjustSharpness(torch.nn.Module):
     def __init__(self, p=0.4) -> None:
+        super().__init__()
         self.p = p
 
     def forward(self, img: Image.Image):
