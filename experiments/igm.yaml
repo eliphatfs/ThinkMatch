@@ -44,9 +44,9 @@ TRAIN:
 
   # learning rate
   OPTIMIZER: sgd
-  LR: 0.1
+  LR: 0.0317
   SEPARATE_BACKBONE_LR: False
-  BACKBONE_LR: 0.1
+  BACKBONE_LR: 0.0317
   MOMENTUM: 0.9
   LR_DECAY: 0.316
   LR_STEP:  # (in epochs)
