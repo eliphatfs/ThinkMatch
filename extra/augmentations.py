@@ -9,7 +9,7 @@ from torchvision.transforms import functional as F
 
 class RandomHorizontalFlip(torch.nn.Module):
     def forward(self, img: Image.Image, p):
-        if torch.rand(1) < 0.5:
+        if torch.rand(1) < 1:
             # draw_kps(img, p, "before.png")
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
             p = p.clone()
