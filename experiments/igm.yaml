@@ -37,7 +37,7 @@ GRAPH:
 # Training settings
 TRAIN:
   # start, end epochs
-  START_EPOCH: 4
+  START_EPOCH: 0
   NUM_EPOCHS: 20
 
   LOSS_FUNC: perm
@@ -53,12 +53,9 @@ TRAIN:
     - 1
     - 2
     - 3
-    - 4
     - 5
-    - 7
-    - 9
-    - 12
-    - 15
+    - 8
+    - 13
 
   EPOCH_ITERS: 2000  # iterations per epoch
 
