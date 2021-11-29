@@ -43,10 +43,10 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(2, feature_lat, 1024, 24)
+        self.cls = ResCls(2, feature_lat, 512, 48)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(24)
+        self.pn = p2_smaller.get_model(48)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
@@ -99,9 +99,9 @@ class Net(nn.Module):
         P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
         if self.training:
-            P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
+            P_src = P_src + torch.rand_like(P_src) * 0.06 - 0.03
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
-        P_src = torch.cat((P_src, torch.ones_like(P_src[:, :1])), 1)
+        P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1))[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
@@ -119,6 +119,7 @@ class Net(nn.Module):
         F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
+        y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt)
         folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src)
 
