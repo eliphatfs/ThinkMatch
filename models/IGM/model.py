@@ -140,9 +140,9 @@ class Net(nn.Module):
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         G_src, G_tgt = data_dict['pyg_graphs']
-        G_src.x, G_tgt.x = F_src, F_tgt
-        F_src = unbatch_features(self.sconv(batch_features(G_src)))
-        F_tgt = unbatch_features(self.sconv(batch_features(G_tgt)))
+        G_src.x, G_tgt.x = batch_features(F_src), batch_features(F_tgt)
+        F_src = unbatch_features(self.sconv(G_src))
+        F_tgt = unbatch_features(self.sconv(G_tgt))
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
