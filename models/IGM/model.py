@@ -43,10 +43,11 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.cls = ResCls(2, feature_lat, 512, 128)
+        self.pix2pt_proj = ResCls(2, feature_lat, 512, 32)
+        self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(128)
+        self.pn = p2_smaller.get_model(32, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
         )
@@ -92,9 +93,11 @@ class Net(nn.Module):
             U_tgt,
             glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
         ], 1)
-        return F_src, F_tgt
+        ghalo_src = torch.cat((glob_src, glob_tgt), 1)
+        ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
+        return F_src, F_tgt, ghalo_src, ghalo_tgt
 
-    def points(self, y_src, P_src, n_src, cls):
+    def points(self, y_src, P_src, n_src, cls, g):
         resc = P_src.new_tensor(self.rescale)
         P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
@@ -102,7 +105,7 @@ class Net(nn.Module):
             P_src = P_src + torch.rand_like(P_src) * 0.06 - 0.03
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
-        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls)[..., :y_src.shape[-1]]
+        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls, g)[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -116,12 +119,13 @@ class Net(nn.Module):
         # resc = P_src.new_tensor(self.rescale)
         # rand_src, rand_tgt = torch.rand(len(P_src), 64, 2).to(P_src), torch.rand(len(P_tgt), 64, 2).to(P_tgt)
         # P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
-        F_src, F_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
+        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        y_src, y_tgt = self.cls(F_src), self.cls(F_tgt)
+        y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
+        g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
-        folding_src = self.points(y_src, P_src, ns_src, data_dict['cls'][0])
-        folding_tgt = self.points(y_tgt, P_tgt, ns_tgt, data_dict['cls'][1])
+        folding_src = self.points(y_src, P_src, ns_src, data_dict['cls'][0], g_src)
+        folding_tgt = self.points(y_tgt, P_tgt, ns_tgt, data_dict['cls'][1], g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
