@@ -103,17 +103,17 @@ class GMDataset(Dataset):
         P1 = np.array(P1)
         P2 = np.array(P2)
 
-        # A1, G1, H1, e1 = build_graphs(P1, n1, stg=cfg.GRAPH.SRC_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
-        # if cfg.GRAPH.TGT_GRAPH_CONSTRUCT == 'same':
-        #     G2 = perm_mat.transpose().dot(G1)
-        #     H2 = perm_mat.transpose().dot(H1)
-        #     A2 = G2.dot(H2.transpose())
-        #     e2 = e1
-        # else:
-        #     A2, G2, H2, e2 = build_graphs(P2, n2, stg=cfg.GRAPH.TGT_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
+        A1, G1, H1, e1 = build_graphs(P1, n1, stg=cfg.GRAPH.SRC_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
+        if cfg.GRAPH.TGT_GRAPH_CONSTRUCT == 'same':
+            G2 = perm_mat.transpose().dot(G1)
+            H2 = perm_mat.transpose().dot(H1)
+            A2 = G2.dot(H2.transpose())
+            e2 = e1
+        else:
+            A2, G2, H2, e2 = build_graphs(P2, n2, stg=cfg.GRAPH.TGT_GRAPH_CONSTRUCT, sym=cfg.GRAPH.SYM_ADJACENCY)
 
-        # pyg_graph1 = self.to_pyg_graph(A1, P1)
-        # pyg_graph2 = self.to_pyg_graph(A2, P2)
+        pyg_graph1 = self.to_pyg_graph(A1, P1)
+        pyg_graph2 = self.to_pyg_graph(A2, P2)
 
         ret_dict = {'Ps': [torch.Tensor(x) for x in [P1, P2]],
                     'ns': [torch.tensor(x) for x in [n1, n2]],
@@ -122,7 +122,7 @@ class GMDataset(Dataset):
                     # 'Gs': [torch.Tensor(x) for x in [G1, G2]],
                     # 'Hs': [torch.Tensor(x) for x in [H1, H2]],
                     # 'As': [torch.Tensor(x) for x in [A1, A2]],
-                    # 'pyg_graphs': [pyg_graph1, pyg_graph2],
+                    'pyg_graphs': [pyg_graph1, pyg_graph2],
                     'cls': [str(x) for x in cls],
                     'id_list': id_list,
                     'univ_size': [torch.tensor(int(x)) for x in univ_size],
@@ -130,30 +130,33 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
-            trans = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
-            ])
-            # if self.test:
-            # else:
-            #     """from extra.perspective import RandomPerspective
-            #     nimgs = []
-            #     nps = []
-            #     to_pil = transforms.ToPILImage()
-            #     rptr = RandomPerspective()
-            #     for img, p in zip(imgs, ret_dict['Ps']):
-            #         img, p = rptr.forward(to_pil(img), p)
-            #         nimgs.append(img)
-            #         nps.append(p)
-            #     ret_dict['Ps'] = nps
-            #     imgs = nimgs"""
-            #     trans = transforms.Compose([
-            #         transforms.ToPILImage(),
-            #         transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-            #         transforms.ToTensor(),
-            #         transforms.RandomErasing(scale=(0.02, 0.16)),
-            #         transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD),
-            #     ])
+            if not self.test:
+                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
+                # from extra.perspective import RandomPerspective
+                nimgs = []
+                nps = []
+                to_pil = transforms.ToPILImage()
+                r1 = RandomHorizontalFlip()
+                # r2 = RandomPerspective()
+                for img, p in zip(imgs, ret_dict['Ps']):
+                    img, p = r1.forward(to_pil(img), p)
+                    nimgs.append(img)
+                    nps.append(p)
+                ret_dict['Ps'] = nps
+                imgs = nimgs
+                trans = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                    RandomAdjustSharpness(),
+                    transforms.ToTensor(),
+                    transforms.RandomErasing(),
+                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
+                ])
+            else:
+                trans = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
+                ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
@@ -248,33 +251,10 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_list]
         if imgs[0] is not None:
-            if not self.test:
-                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
-                # from extra.perspective import RandomPerspective
-                nimgs = []
-                nps = []
-                to_pil = transforms.ToPILImage()
-                r1 = RandomHorizontalFlip()
-                # r2 = RandomPerspective()
-                for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r1.forward(to_pil(img), p)
-                    nimgs.append(img)
-                    nps.append(p)
-                ret_dict['Ps'] = nps
-                imgs = nimgs
-                trans = transforms.Compose([
-                    transforms.ToPILImage(),
-                    transforms.ColorJitter(0.3, 0.3, 0.3, 0.2),
-                    RandomAdjustSharpness(),
-                    transforms.ToTensor(),
-                    transforms.RandomErasing(),
-                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-                ])
-            else:
-                trans = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-                ])
+            trans = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
+            ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_list[0]['kpts'][0]:
