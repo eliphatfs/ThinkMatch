@@ -15,6 +15,7 @@ class RandomHorizontalFlip(torch.nn.Module):
             p = copy.deepcopy(p)
             p[..., 0] = img.width - 1 - p[..., 0]
             draw_kps(img, p, "after.png")
+            import pdb; pdb.set_trace()
         return img, p
 
 

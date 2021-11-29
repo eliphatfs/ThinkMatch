@@ -130,28 +130,33 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
-            # if not self.test:
-            #     from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
-            #     # from extra.perspective import RandomPerspective
-            #     nimgs = []
-            #     nps = []
-            #     to_pil = transforms.ToPILImage()
-            #     r1 = RandomHorizontalFlip()
-            #     # r2 = RandomPerspective()
-            #     for img, p in zip(imgs, ret_dict['Ps']):
-            #         img, p = r1.forward(to_pil(img), p)
-            #         nimgs.append(img)
-            #         nps.append(p)
-            #     ret_dict['Ps'] = nps
-            #     imgs = nimgs
-            #     trans = transforms.Compose([
-            #         # transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-            #         # RandomAdjustSharpness(),
-            #         transforms.ToTensor(),
-            #         # transforms.RandomErasing(),
-            #         transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-            #     ])
-            # else:
+            if not self.test:
+                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
+                # from extra.perspective import RandomPerspective
+                nimgs = []
+                nps = []
+                to_pil = transforms.ToPILImage()
+                r1 = RandomHorizontalFlip()
+                # r2 = RandomPerspective()
+                for img, p in zip(imgs, ret_dict['Ps']):
+                    img, p = r1(to_pil(img), p)
+                    nimgs.append(img)
+                    nps.append(p)
+                ret_dict['Ps'] = nps
+                imgs = nimgs
+                trans = transforms.Compose([
+                    # transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                    # RandomAdjustSharpness(),
+                    transforms.ToTensor(),
+                    # transforms.RandomErasing(),
+                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
+                ])
+            else:
+                trans = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.ToTensor(),
+                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
+                ])
             t1 = transforms.Compose([
                 transforms.ToPILImage(),
                 transforms.ToTensor(),
@@ -162,12 +167,6 @@ class GMDataset(Dataset):
                 transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
             ])
             print(t1(imgs[0]) - t2(imgs[0]))
-            import pdb; pdb.set_trace()
-            trans = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.ToTensor(),
-                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-            ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
