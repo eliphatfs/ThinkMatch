@@ -132,22 +132,22 @@ class GMDataset(Dataset):
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
             if self.augment:
-                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
+                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness, RandomPerspective
                 # from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
                 r1 = RandomHorizontalFlip()
-                # r2 = RandomPerspective()
+                r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r1(to_pil(img), p)
+                    img, p = r2(*r1(to_pil(img), p))
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
-                    # transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-                    # RandomAdjustSharpness(),
+                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                    RandomAdjustSharpness(),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)

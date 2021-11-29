@@ -13,7 +13,7 @@ FP16: False
 STATISTIC_STEP: 50
 RANDOM_SEED: 123
 
-# PRETRAINED_PATH: ThinkMatchPretrained/pretrained_params_vgg16_ngm_voc.pt
+PRETRAINED_PATH: ThinkMatchPretrained/pretrained_params_vgg16_ngm_voc.pt
 
 # available GPU ids
 GPUS:
@@ -37,7 +37,7 @@ GRAPH:
 # Training settings
 TRAIN:
   # start, end epochs
-  START_EPOCH: 0
+  START_EPOCH: 4
   NUM_EPOCHS: 20
 
   LOSS_FUNC: perm
