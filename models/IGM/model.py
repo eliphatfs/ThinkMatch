@@ -6,6 +6,7 @@ from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
 from extra.pointnetpp import p2_smaller
+from models.BBGM.sconv_archs import SiameseSConvOnNodes
 
 
 class ResCls(nn.Module):
@@ -43,7 +44,8 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.pix2pt_proj = ResCls(2, feature_lat, 512, 32)
+        self.sconv = SiameseSConvOnNodes(feature_lat)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 32)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.tau = cfg.NGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
@@ -122,6 +124,10 @@ class Net(nn.Module):
         if self.training:
             P_src = P_src + torch.rand_like(P_src) * 0.03 - 0.015
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
+
+        G_src, G_tgt = data_dict['pyg_graphs']
+        G_src.x, G_tgt.x = F_src, F_tgt
+        F_src, F_tgt = self.sconv(G_src, G_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
