@@ -47,7 +47,7 @@ def unbatch_features(orig, embeddings, num_vertices):
     res = torch.zeros_like(orig)
     cum = 0
     for embedding, num_v in zip(res, num_vertices):
-        embedding[:, :num_v] = embeddings[cum: cum + num_v]
+        embedding[:, :num_v] = embeddings[cum: cum + num_v].t()
         cum = cum + num_v
     return res
 
