@@ -1,12 +1,13 @@
 import torch
 from PIL import Image, ImageEnhance
+import copy
 
 
 class RandomHorizontalFlip(torch.nn.Module):
     def forward(self, img: Image.Image, p):
         if torch.rand(1) < 0.5:
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
-            p = p.copy()
+            p = copy.deepcopy(p)
             p[..., 0] = img.width - 1 - p[..., 0]
         return img, p
 
