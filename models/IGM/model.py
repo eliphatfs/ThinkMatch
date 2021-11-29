@@ -29,7 +29,7 @@ class ResCls(nn.Module):
 
 def my_align(raw_feature, P, ori_size: tuple):
     return F.grid_sample(
-        raw_feature,
+        raw_feature.transpose(-1, -2),
         2 * P.unsqueeze(-2) / ori_size[0] - 1,
         'bilinear',
         'border',
