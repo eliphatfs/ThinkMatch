@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from .pointnet_util import PointNetSetAbstractionMsg,PointNetSetAbstraction,PointNetFeaturePropagation
-from pygmtools.datasets import VOC2011_KPT_NAMES
+from pygmtools.dataset import VOC2011_KPT_NAMES
 
 
 labels = sorted(VOC2011_KPT_NAMES)
