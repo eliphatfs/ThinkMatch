@@ -249,7 +249,7 @@ class GMDataset(Dataset):
         imgs = [anno['img'] for anno in anno_list]
         if imgs[0] is not None:
             if not self.test:
-                from extra.augmentations import RandomHorizontalFlip
+                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
                 # from extra.perspective import RandomPerspective
                 nimgs = []
                 nps = []
@@ -264,7 +264,8 @@ class GMDataset(Dataset):
                 imgs = nimgs
                 trans = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                    transforms.ColorJitter(0.3, 0.3, 0.3, 0.2),
+                    RandomAdjustSharpness(),
                     transforms.ToTensor(),
                     transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
