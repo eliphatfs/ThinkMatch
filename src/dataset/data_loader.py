@@ -153,6 +153,7 @@ class GMDataset(Dataset):
                 ])
             else:
                 trans = transforms.Compose([
+                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
                 ])
