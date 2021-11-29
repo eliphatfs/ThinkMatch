@@ -148,7 +148,7 @@ class GMDataset(Dataset):
                     transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
                     RandomAdjustSharpness(),
                     transforms.ToTensor(),
-                    transforms.RandomErasing(),
+                    # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
                 ])
             else:
