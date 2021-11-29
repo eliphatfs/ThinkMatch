@@ -158,7 +158,6 @@ class GMDataset(Dataset):
                 transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
             ])
             t2 = transforms.Compose([
-                transforms.ToPILImage(),
                 transforms.ToTensor(),
                 transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
             ])
