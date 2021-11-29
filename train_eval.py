@@ -272,7 +272,7 @@ if __name__ == '__main__':
                      problem=cfg.PROBLEM.TYPE,
                      length=dataset_len['train'],
                      cls=cfg.TRAIN.CLASS,
-                     using_all_graphs=cfg.PROBLEM.TRAIN_ALL_GRAPHS)
+                     using_all_graphs=cfg.PROBLEM.TRAIN_ALL_GRAPHS, augment=True)
     dataloader = {x: get_dataloader(image_dataset[x], shuffle=True, fix_seed=(x == 'test'))
                   for x in ('train', 'train_aug', 'test')}
 
