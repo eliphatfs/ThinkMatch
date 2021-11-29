@@ -140,7 +140,7 @@ class GMDataset(Dataset):
                 r1 = RandomHorizontalFlip()
                 # r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    # img, p = r1(to_pil(img), p)
+                    img, p = r1(to_pil(img), p)
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
