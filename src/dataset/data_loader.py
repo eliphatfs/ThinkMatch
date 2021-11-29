@@ -16,13 +16,14 @@ from itertools import combinations, product
 
 
 class GMDataset(Dataset):
-    def __init__(self, name, bm, length, using_all_graphs=False, cls=None, problem='2GM'):
+    def __init__(self, name, bm, length, using_all_graphs=False, cls=None, problem='2GM', augment=False):
         self.name = name
         self.bm = bm
         self.using_all_graphs = using_all_graphs
         self.obj_size = self.bm.obj_resize
         self.test = True if self.bm.sets == 'test' else False
         self.cls = None if cls in ['none', 'all'] else cls
+        self.augment = augment
 
         if self.cls is None:
             if problem == 'MGM3':
@@ -130,7 +131,7 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
-            if not self.test:
+            if self.augment:
                 from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness
                 # from extra.perspective import RandomPerspective
                 nimgs = []

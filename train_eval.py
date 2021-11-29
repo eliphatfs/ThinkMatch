@@ -77,7 +77,7 @@ def train_eval_model(model,
 
         # Iterate over data.
         while iter_num < cfg.TRAIN.EPOCH_ITERS:
-            for inputs in dataloader['train']:
+            for inputs in dataloader[['train', 'train_aug'][epoch > 0]]:
                 if iter_num >= cfg.TRAIN.EPOCH_ITERS:
                     break
                 if model.module.device != torch.device('cpu'):
@@ -267,8 +267,14 @@ if __name__ == '__main__':
                      cls=cfg.TRAIN.CLASS if x == 'train' else cfg.EVAL.CLASS,
                      using_all_graphs=cfg.PROBLEM.TRAIN_ALL_GRAPHS if x == 'train' else cfg.PROBLEM.TEST_ALL_GRAPHS)
         for x in ('train', 'test')}
+    image_dataset['train_aug'] = GMDataset(name=cfg.DATASET_FULL_NAME,
+                     bm=benchmark['train'],
+                     problem=cfg.PROBLEM.TYPE,
+                     length=dataset_len['train'],
+                     cls=cfg.TRAIN.CLASS,
+                     using_all_graphs=cfg.PROBLEM.TRAIN_ALL_GRAPHS)
     dataloader = {x: get_dataloader(image_dataset[x], shuffle=True, fix_seed=(x == 'test'))
-                  for x in ('train', 'test')}
+                  for x in ('train', 'train_aug', 'test')}
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
