@@ -153,8 +153,8 @@ class GMDataset(Dataset):
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
-                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-                    RandomAdjustSharpness(),
+                    # transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                    # RandomAdjustSharpness(),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
