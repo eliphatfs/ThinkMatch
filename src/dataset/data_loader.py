@@ -139,7 +139,7 @@ class GMDataset(Dataset):
                 r1 = RandomHorizontalFlip()
                 # r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r1(to_pil(img), p)
+                    # img, p = r1(to_pil(img), p)
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
@@ -157,16 +157,6 @@ class GMDataset(Dataset):
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
                 ])
-            t1 = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.ToTensor(),
-                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-            ])
-            t2 = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-            ])
-            print(t1(imgs[0]) - t2(imgs[0]))
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
