@@ -127,7 +127,7 @@ class Net(nn.Module):
 
         G_src, G_tgt = data_dict['pyg_graphs']
         G_src.x, G_tgt.x = F_src, F_tgt
-        F_src, F_tgt = self.sconv(G_src, G_tgt)
+        F_src, F_tgt = self.sconv(G_src), self.sconv(G_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
