@@ -14,6 +14,7 @@ from src.utils.model_sl import load_model, save_model
 from eval import eval_model
 from src.lap_solvers.hungarian import hungarian
 from src.utils.data_to_cuda import data_to_cuda
+from extra.my_focal import MyFocalLoss
 
 from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
@@ -281,7 +282,7 @@ if __name__ == '__main__':
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'ce':
         criterion = CrossEntropyLoss()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'focal':
-        criterion = FocalLoss(gamma=2.0)
+        criterion = MyFocalLoss(gamma=2.5)
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hung':
         criterion = PermutationLossHung()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hamming':
