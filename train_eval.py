@@ -77,7 +77,7 @@ def train_eval_model(model,
 
         # Iterate over data.
         while iter_num < cfg.TRAIN.EPOCH_ITERS:
-            for inputs in dataloader[['train', 'train_aug'][epoch > 0]]:
+            for inputs in dataloader[['train', 'train_aug'][epoch >= 0]]:
                 if iter_num >= cfg.TRAIN.EPOCH_ITERS:
                     break
                 if model.module.device != torch.device('cpu'):

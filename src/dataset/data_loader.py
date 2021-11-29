@@ -144,7 +144,7 @@ class GMDataset(Dataset):
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
-                r1 = (lambda x: x) if torch.rand() < 0.5 else RandomHorizontalFlip()
+                r1 = (lambda x: x) if torch.rand(1) < 0.5 else RandomHorizontalFlip()
                 r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
                     img, p = r1(to_pil(img), p)
