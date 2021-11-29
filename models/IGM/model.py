@@ -142,8 +142,8 @@ class Net(nn.Module):
         G_src, G_tgt = data_dict['pyg_graphs']
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
         G_src.x, G_tgt.x = batch_features(y_src, ns_src), batch_features(y_tgt, ns_tgt)
-        F_src = unbatch_features(F_src, self.sconv(G_src).x, ns_src)
-        F_tgt = unbatch_features(F_tgt, self.sconv(G_tgt).x, ns_tgt)
+        y_src = unbatch_features(y_src, self.sconv(G_src).x, ns_src)
+        y_src = unbatch_features(y_src, self.sconv(G_tgt).x, ns_tgt)
 
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
