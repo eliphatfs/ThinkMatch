@@ -147,13 +147,13 @@ class GMDataset(Dataset):
                 r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
                     img, p = r1(to_pil(img), p)
+                    img = AdjustSharpness(random.randint(0, 4), random.uniform(0, 2))(img)
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
                     # transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-                    AdjustSharpness(random.randint(0, 3), random.uniform(0, 2)),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
