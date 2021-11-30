@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
+from torchvision.transforms.transforms import RandomApply
 import torch_geometric as pyg
 import numpy as np
 import random
@@ -147,13 +148,16 @@ class GMDataset(Dataset):
                 r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
                     img, p = r1(to_pil(img), p)
-                    img = AdjustSharpness(random.randint(0, 10), random.uniform(0, 1))(img)
                     nimgs.append(img)
                     nps.append(p)
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
-                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.05),
+                    transforms.RandomApply([
+                        transforms.Resize([random.randrange(32, 224)] * 2),
+                        transforms.Resize([256, 256])
+                    ]),
+                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
