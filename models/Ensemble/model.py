@@ -12,6 +12,10 @@ class Net(torch.nn.Module):
         self.ngm = NGM()
         self.ngm.load_state_dict(torch.load("pretrained_params_vgg16_ngmv2_voc.pt"))
 
+    @property
+    def device(self):
+        return next(self.parameters()).device
+
     def forward(self, x):
         x = self.igm(x)
         ds = x['ds_mat']
