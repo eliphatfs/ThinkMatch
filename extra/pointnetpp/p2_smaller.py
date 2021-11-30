@@ -15,7 +15,7 @@ class get_model(nn.Module):
         self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.3], [24, 24, 24], 3 + additional_channel, [[64, 128], [128, 256], [64, 128]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 3, mlp=[256, 1024], group_all=True)
         self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 128 + 256 + 128, mlp=[1024, 512])
-        self.fp1 = PointNetFeaturePropagation(in_channel=518 + 32 + g_channel + additional_channel, mlp=[512, 256])
+        self.fp1 = PointNetFeaturePropagation(in_channel=518 + 32 * 0 + g_channel + additional_channel, mlp=[512, 256])
         self.conv1 = nn.Conv1d(256, 32, 1)
         self.cls_emb = nn.Embedding(len(labels), 32)
 
@@ -32,10 +32,10 @@ class get_model(nn.Module):
         l3_xyz, l3_points = self.sa3(l1_xyz, l1_points)
         # Feature Propagation layers
         l1_points = self.fp3(l1_xyz, l3_xyz, l1_points, l3_points)
-        cls_label = self.cls_emb(torch.tensor([labels.index(i) for i in cls], device=l1_points.device))
-        cls_label_one_hot = cls_label.view(B, 32, 1).repeat(1, 1, N)
+        # cls_label = self.cls_emb(torch.tensor([labels.index(i) for i in cls], device=l1_points.device))
+        # cls_label_one_hot = cls_label.view(B, 32, 1).repeat(1, 1, N)
         g = g.repeat(1, 1, N)
-        l0_points = self.fp1(l0_xyz, l1_xyz, torch.cat([cls_label_one_hot, g, l0_xyz, l0_points], 1), l1_points)
+        l0_points = self.fp1(l0_xyz, l1_xyz, torch.cat([g, l0_xyz, l0_points], 1), l1_points)
         # FC layers
         x = self.conv1(l0_points)
         # x = F.log_softmax(x, dim=1)

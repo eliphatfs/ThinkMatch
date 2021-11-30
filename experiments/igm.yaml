@@ -37,17 +37,17 @@ GRAPH:
 # Training settings
 TRAIN:
   # start, end epochs
-  START_EPOCH: 15
+  START_EPOCH: 0
   NUM_EPOCHS: 25
 
   LOSS_FUNC: perm
 
   # learning rate
   OPTIMIZER: sgd
-  LR: 0.05
+  LR: 0.06
   SEPARATE_BACKBONE_LR: False
   BACKBONE_LR: 0.05
-  MOMENTUM: 0.85
+  MOMENTUM: 0.82
   LR_DECAY: 0.707106
   LR_STEP:  # (in epochs)
     - 1
@@ -69,7 +69,7 @@ EVAL:
   SAMPLES: 1000  # number of tested pairs for each class
 
 # model parameters
-NGM:
+IGM:
   EDGE_FEATURE: cat
   FEATURE_CHANNEL: 512
   SK_ITER_NUM: 10
