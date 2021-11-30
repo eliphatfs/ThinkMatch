@@ -7,9 +7,13 @@ from typing import Tuple, List
 from torchvision.transforms import functional as F
 
 
-class RandomHorizontalFlip(torch.nn.Module):
+class HorizontalFlip(torch.nn.Module):
+    def __init__(self, flip):
+        super().__init__()
+        self.flip = flip
+
     def forward(self, img: Image.Image, p):
-        if torch.rand(1) < 1:
+        if self.flip:
             # draw_kps(img, p, "before.png")
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
             p = p.clone()
@@ -19,15 +23,15 @@ class RandomHorizontalFlip(torch.nn.Module):
         return img, p
 
 
-class RandomAdjustSharpness(torch.nn.Module):
-    def __init__(self, p=0.4) -> None:
+class AdjustSharpness(torch.nn.Module):
+    def __init__(self, n, val) -> None:
         super().__init__()
-        self.p = p
+        self.n = n
+        self.val = val
 
     def forward(self, img: Image.Image):
-        val = torch.rand(1).item() * 2
-        while torch.rand(1) < self.p:
-            return self.adjust_sharpness(img, val)
+        for _ in range(self.n):
+            img = self.adjust_sharpness(img, self.val)
         return img
 
     def adjust_sharpness(self, img, sharpness_factor):

@@ -139,12 +139,11 @@ class GMDataset(Dataset):
                 if not pnt:
                     print("AUGMENT")
                     pnt = True
-                from extra.augmentations import RandomHorizontalFlip, RandomAdjustSharpness, RandomPerspective
-                # from extra.perspective import RandomPerspective
+                from extra.augmentations import HorizontalFlip, AdjustSharpness, RandomPerspective
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
-                r1 = (lambda *x: x) if torch.rand(1) < 0.5 else RandomHorizontalFlip()
+                r1 = HorizontalFlip(random.random() < 0.5)
                 r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
                     img, p = r1(to_pil(img), p)
@@ -154,7 +153,7 @@ class GMDataset(Dataset):
                 imgs = nimgs
                 trans = transforms.Compose([
                     # transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
-                    # RandomAdjustSharpness(),
+                    AdjustSharpness(random.randint(0, 3), random.uniform(0, 2)),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
