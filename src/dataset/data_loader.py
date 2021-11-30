@@ -395,12 +395,12 @@ def collate_fn(data: list):
                 sparse_dtype = np.float16
             else:
                 sparse_dtype = np.float32
-            # K1G = [kronecker_sparse(x, y).astype(sparse_dtype) for x, y in zip(G2, G1)]  # 1 as source graph, 2 as target graph
-            # K1H = [kronecker_sparse(x, y).astype(sparse_dtype) for x, y in zip(H2, H1)]
-            # K1G = CSRMatrix3d(K1G)
-            # K1H = CSRMatrix3d(K1H).transpose()
+            K1G = [kronecker_sparse(x, y).astype(sparse_dtype) for x, y in zip(G2, G1)]  # 1 as source graph, 2 as target graph
+            K1H = [kronecker_sparse(x, y).astype(sparse_dtype) for x, y in zip(H2, H1)]
+            K1G = CSRMatrix3d(K1G)
+            K1H = CSRMatrix3d(K1H).transpose()
 
-            # ret['KGHs'] = K1G, K1H
+            ret['KGHs'] = K1G, K1H
         elif cfg.PROBLEM.TYPE in ['MGM', 'MGM3'] and 'Gs_tgt' in ret and 'Hs_tgt' in ret:
             ret['KGHs'] = dict()
             for idx_1, idx_2 in product(range(len(ret['Gs'])), repeat=2):
