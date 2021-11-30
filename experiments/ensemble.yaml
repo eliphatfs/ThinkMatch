@@ -5,7 +5,7 @@ DATASET_FULL_NAME: PascalVOC
 
 MODULE: models.Ensemble.model
 
-BACKBONE: VGG16_bn
+BACKBONE: VGG16_bn_final
 
 BATCH_SIZE: 16
 DATALOADER_NUM: 8
@@ -31,7 +31,7 @@ PROBLEM:
 # Graph construction settings
 GRAPH:
   SRC_GRAPH_CONSTRUCT: tri
-  TGT_GRAPH_CONSTRUCT: fc
+  TGT_GRAPH_CONSTRUCT: tri
   SYM_ADJACENCY: True
 
 # Training settings
