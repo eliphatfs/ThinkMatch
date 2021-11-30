@@ -3,7 +3,7 @@ DATASET_NAME: voc
 
 DATASET_FULL_NAME: PascalVOC
 
-MODULE: models.IGM.model
+MODULE: models.Ensemble.model
 
 BACKBONE: VGG16_bn
 
