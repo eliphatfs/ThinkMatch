@@ -61,11 +61,11 @@ class Net(nn.Module):
         self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 48)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
-        self.tau = cfg.NGM.SK_TAU
+        self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(48, 128)
         self.sinkhorn = Sinkhorn(
-            max_iter=cfg.NGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.NGM.SK_EPSILON
+            max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
         self.backbone_params = list(self.resnet.parameters())
 
