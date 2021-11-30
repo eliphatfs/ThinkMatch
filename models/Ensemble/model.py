@@ -8,7 +8,7 @@ class Net(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.igm = IGM()
-        self.igm.load_state_dict(torch.load("output/igm_voc/params/params_0015.pt"))
+        self.igm.load_state_dict(torch.load("output/igm_voc/params/params_0007.pt"))
         self.ngm = NGM()
         self.ngm.load_state_dict(torch.load("pretrained_params_vgg16_ngmv2_voc.pt"))
 
