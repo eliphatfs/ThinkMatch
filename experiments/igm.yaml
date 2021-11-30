@@ -37,7 +37,7 @@ GRAPH:
 # Training settings
 TRAIN:
   # start, end epochs
-  START_EPOCH: 0
+  START_EPOCH: 5
   NUM_EPOCHS: 20
 
   LOSS_FUNC: perm
