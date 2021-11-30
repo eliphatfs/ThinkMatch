@@ -157,9 +157,11 @@ class GMDataset(Dataset):
                         transforms.Resize([random.randrange(32, 224)] * 2),
                         transforms.Resize([256, 256])
                     ]),
-                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                    transforms.RandomApply([
+                        transforms.ColorJitter(0.3, 0.3, 0.3, 0.2),
+                    ]),
                     transforms.ToTensor(),
-                    # transforms.RandomErasing(),
+                    transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
                 ])
             else:
