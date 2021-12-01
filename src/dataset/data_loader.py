@@ -157,7 +157,7 @@ class GMDataset(Dataset):
                             AdjustSharpness(1, 2),
                         ]),
                         transforms.RandomApply([
-                            transforms.Resize([random.randrange(32, 224)] * 2),
+                            transforms.Resize([random.randrange(64, 224)] * 2),
                             transforms.Resize([256, 256])
                         ]),
                     ]),
