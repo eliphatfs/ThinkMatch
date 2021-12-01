@@ -74,7 +74,7 @@ class Benchmark:
                 obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                 box=(boundbox[0], boundbox[1], boundbox[2], boundbox[3]))
                 import numpy
-                if False and self.sets != 'test':
+                if self.sets != 'test':
                     xmin, ymin, xmax, ymax = self.data_dict[keys]['bounds']
                     h = ymax - ymin
                     w = xmax - xmin
