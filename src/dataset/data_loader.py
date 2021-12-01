@@ -152,14 +152,9 @@ class GMDataset(Dataset):
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
-                    transforms.RandomChoice([
-                        transforms.RandomApply([
-                            AdjustSharpness(1, 2),
-                        ]),
-                        transforms.RandomApply([
-                            transforms.Resize([random.randrange(24, 224)] * 2),
-                            transforms.Resize([256, 256])
-                        ]),
+                    transforms.RandomApply([
+                        transforms.Resize([random.randrange(16, 224)] * 2),
+                        transforms.Resize([256, 256])
                     ]),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.15, 0.15, 0.15),
