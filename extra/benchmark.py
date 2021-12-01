@@ -93,7 +93,7 @@ class Benchmark:
                                      box=(boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2))
                     from extra.augmentations import draw_kps
                     try:
-                        draw_kps(img.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
+                        draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
                     except:
                         print(obj_dict['kpts'])
                         raise
