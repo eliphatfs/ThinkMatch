@@ -71,7 +71,9 @@ class Benchmark:
             img_file = self.data_dict[keys]['path']
             obj_dict['kpts'] = self.data_dict[keys]['kpts']
             with Image.open(str(img_file)) as img:
-                if self.sets != 'test':
+                obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
+                                box=(boundbox[0], boundbox[1], boundbox[2], boundbox[3]))
+                if False and self.sets != 'test':
                     import numpy
                     xmin, ymin, xmax, ymax = self.data_dict[keys]['bounds']
                     h = ymax - ymin
@@ -91,12 +93,12 @@ class Benchmark:
                         kpt['y'] = (kpt['y'] - yminn) * self.obj_resize[1] / (ymaxn - yminn)
                     obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                      box=(boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2))
-                    from extra.augmentations import draw_kps
-                    try:
-                        draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
-                    except:
-                        print(obj_dict['kpts'])
-                        raise
+                from extra.augmentations import draw_kps
+                try:
+                    draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
+                except:
+                    print(obj_dict['kpts'])
+                    raise
                 if self.name == 'CUB2011':
                     if not obj.mode == 'RGB':
                         obj = obj.convert('RGB')
