@@ -98,7 +98,7 @@ class Benchmark:
                     draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
                 except:
                     print(obj_dict['kpts'])
-                    raise
+                import pdb; pdb.set_trace()
                 if self.name == 'CUB2011':
                     if not obj.mode == 'RGB':
                         obj = obj.convert('RGB')
