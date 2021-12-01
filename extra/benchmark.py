@@ -20,14 +20,10 @@ class Benchmark:
         :param filter: 'intersection', 'inclusion' or 'unfiltered'
         :param args: specific settings for dataset
         """
-        assert name == 'PascalVOC' or name == 'SPair71k' or name == 'WillowObject' or name == 'IMC_PT_SparseGM' or name == 'CUB2011', 'No match found for dataset {}'.format(
-            name)
-        assert problem == '2GM' or problem == 'MGM' or problem == 'MGM3', 'No match found for problem {}'.format(
-            problem)
-        assert filter == 'intersection' or filter == 'inclusion' or filter == 'unfiltered', 'No match found for filter {}'.format(
-            filter)
-        assert not ((
-                                problem == 'MGM' or problem == 'MGM3') and filter == 'inclusion'), 'The filter inclusion only matches 2GM'
+        assert name == 'PascalVOC' or name == 'SPair71k' or name == 'WillowObject' or name == 'IMC_PT_SparseGM' or name == 'CUB2011', 'No match found for dataset {}'.format(name)
+        assert problem == '2GM' or problem == 'MGM' or problem == 'MGM3', 'No match found for problem {}'.format(problem)
+        assert filter == 'intersection' or filter == 'inclusion' or filter == 'unfiltered', 'No match found for filter {}'.format(filter)
+        assert not((problem == 'MGM' or problem == 'MGM3') and filter == 'inclusion'), 'The filter inclusion only matches 2GM'
 
         self.name = name
         self.problem = problem
@@ -56,6 +52,7 @@ class Benchmark:
     def get_data(self, ids, test=False, shuffle=True):
         """
         Fetch a data pair(for 2GM) or pairs of data(for MGM and MGM3) for training or test.
+
         :param ids: image id list, usually in 'train.json' or 'test.json'
         :param test: whether the fetched is used for test
         :param shuffle: whether shuffle keypoint order
@@ -64,8 +61,7 @@ class Benchmark:
                                 data pair (ids[0],ids[1])
                 id_combination: combination of image ids
         """
-        assert (self.problem == '2GM' and len(ids) == 2) or ((self.problem == 'MGM' or self.problem == 'MGM3') and len(
-            ids) > 2), '{} problem cannot get {} data'.format(self.problem, len(ids))
+        assert (self.problem == '2GM' and len(ids) == 2) or ((self.problem == 'MGM' or self.problem == 'MGM3') and len(ids) > 2), '{} problem cannot get {} data'.format(self.problem, len(ids))
 
         ids.sort()
         data_list = []
@@ -95,6 +91,8 @@ class Benchmark:
                         kpt['y'] = (kpt['y'] - yminn) * self.obj_resize[1] / (ymaxn - yminn)
                     obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                      box=(boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2))
+                    from extra.augmentations import draw_kps
+                    draw_kps(img.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
                 if self.name == 'CUB2011':
                     if not obj.mode == 'RGB':
                         obj = obj.convert('RGB')
@@ -111,7 +109,7 @@ class Benchmark:
             perm_mat = np.zeros([len(data_list[_]['kpts']) for _ in id_tuple], dtype=np.float32)
             row_list = []
             col_list = []
-
+             
             for i, keypoint in enumerate(data_list[id_tuple[0]]['kpts']):
                 for j, _keypoint in enumerate(data_list[id_tuple[1]]['kpts']):
                     if keypoint['labels'] == _keypoint['labels']:
@@ -130,7 +128,7 @@ class Benchmark:
             elif self.filter == 'inclusion':
                 perm_mat = perm_mat[row_list, :]
                 data_list[id_tuple[0]]['kpts'] = [data_list[id_tuple[0]]['kpts'][i] for i in row_list]
-            if not (len(ids) > 2 and self.filter == 'intersection'):
+            if not(len(ids) > 2 and self.filter == 'intersection'):
                 sparse_perm_mat = coo_matrix(perm_mat)
                 perm_mat_dict[id_tuple] = sparse_perm_mat
 
@@ -176,6 +174,7 @@ class Benchmark:
                 if not os.path.exists(gt_path):
                     np.save(gt_path, perm_mat_dict[pair])
 
+        id_combination = list(itertools.combinations(ids, 2))
         if not test:
             return data_list, perm_mat_dict, ids
         else:
@@ -184,6 +183,7 @@ class Benchmark:
     def rand_get_data(self, cls=None, num=2, test=False, shuffle=True):
         """
         Randomly fetch data for training or test.
+
         :param cls: class of fetched data
         :param num: number of images in image id list
         :param test: whether the fetched is used for test
@@ -212,13 +212,14 @@ class Benchmark:
             for objID in random.sample(data_list, num):
                 ids.append(objID)
         else:
-            ids = random.sample(data_list, 1)[0]
-
+            ids = random.sample(data_list, 1)
+        
         return self.get_data(ids, test, shuffle)
 
     def get_id_combination(self, cls=None, num=2):
         """
         Get the combination of images and total length.
+
         :param cls: class of images
         :param num: number of images in image id list
         :return id_combination_list: list of combinations of image ids
@@ -236,41 +237,27 @@ class Benchmark:
         id_combination_list = []
         if clss != None:
             data_list = []
-            if self.name != 'SPair71k':
+            for id in data_id:
+                if self.data_dict[id]['cls'] == clss:
+                    data_list.append(id)
+            id_combination = list(itertools.combinations(data_list, num))
+            length = length + len(id_combination)
+            id_combination_list.append(id_combination)
+        else:
+            for clss in self.classes:
+                data_list = []
                 for id in data_id:
                     if self.data_dict[id]['cls'] == clss:
                         data_list.append(id)
                 id_combination = list(itertools.combinations(data_list, num))
-                length += len(id_combination)
+                length = length + len(id_combination)
                 id_combination_list.append(id_combination)
-            else:
-                for id_pair in data_id:
-                    if self.data_dict[id_pair[0]]['cls'] == clss:
-                        data_list.append(id_pair)
-                length += len(data_list)
-                id_combination_list.append(data_list)
-        else:
-            for clss in self.classes:
-                data_list = []
-                if self.name != 'SPair71k':
-                    for id in data_id:
-                        if self.data_dict[id]['cls'] == clss:
-                            data_list.append(id)
-                    id_combination = list(itertools.combinations(data_list, num))
-                    length += len(id_combination)
-                    id_combination_list.append(id_combination)
-                else:
-                    for id_pair in data_id:
-                        if self.data_dict[id_pair[0]]['cls'] == clss:
-                            data_list.append(id_pair)
-                    length += len(data_list)
-                    id_combination_list.append(data_list)
-
         return id_combination_list, length
 
     def compute_length(self, cls, num=2):
         """
         Compute the length of combination of images.
+
         :param cls: class of images
         :param num: number of images in image id list
         :return length: length of the combination
@@ -286,36 +273,27 @@ class Benchmark:
         length = 0
 
         if clss != None:
-            if self.name != 'SPair71k':
+            data_list = []
+            for id in data_id:
+                if self.data_dict[id]['cls'] == clss:
+                    data_list.append(id)
+            id_combination = list(itertools.combinations(data_list, num))
+            length = length + len(id_combination)
+
+        else:
+            for clss in self.classes:
                 data_list = []
                 for id in data_id:
                     if self.data_dict[id]['cls'] == clss:
                         data_list.append(id)
                 id_combination = list(itertools.combinations(data_list, num))
-                length += len(id_combination)
-            else:
-                for id_pair in data_id:
-                    if self.data_dict[id_pair[0]]['cls'] == clss:
-                        length += 1
-
-        else:
-            for clss in self.classes:
-                if self.name != 'SPair71k':
-                    data_list = []
-                    for id in data_id:
-                        if self.data_dict[id]['cls'] == clss:
-                            data_list.append(id)
-                    id_combination = list(itertools.combinations(data_list, num))
-                    length += len(id_combination)
-                else:
-                    for id_pair in data_id:
-                        if self.data_dict[id_pair[0]]['cls'] == clss:
-                            length += 1
+                length = length + len(id_combination)
         return length
 
     def compute_img_num(self, classes):
         """
         Compute number of images in each class.
+
         :param classes: list of dataset classes
         :return: num_list: list of numbers of images in each class.
         """
@@ -324,28 +302,18 @@ class Benchmark:
         num_list = []
         for clss in classes:
             cls_img_num = 0
-            if self.name != 'SPair71k':
-                for id in data_id:
-                    if self.data_dict[id]['cls'] == clss:
-                        cls_img_num += 1
-                num_list.append(cls_img_num)
-            else:
-                img_cache = []
-                for id_pair in data_id:
-                    if self.data_dict[id_pair[0]]['cls'] == clss:
-                        if id_pair[0] not in img_cache:
-                            img_cache.append(id_pair[0])
-                            cls_img_num += 1
-                        if id_pair[1] not in img_cache:
-                            img_cache.append(id_pair[1])
-                            cls_img_num += 1
-                num_list.append(cls_img_num)
+
+            for id in data_id:
+                if self.data_dict[id]['cls'] == clss:
+                    cls_img_num += 1
+            num_list.append(cls_img_num)
 
         return num_list
 
     def eval(self, prediction, classes, verbose=False):
         """
         Evaluate test results. Compute matching accuracy and coverage.
+
         :param prediction: prediction result.  [{'ids': (id1, id2), 'cls': cls, 'permmat': np.array or scipy.sparse},…]
         :param classes: list of evaluated classes
         :param verbose: whether print the result
@@ -371,13 +339,9 @@ class Benchmark:
             cls_recall[cls] = []
             cls_f1[cls] = []
 
-        if self.name != 'SPair71k':
-            for key, obj in self.data_dict.items():
-                if (key in data_id) and (obj['cls'] in classes):
-                    cls_dict[obj['cls']] += 1
-        else:
-            for cls in classes:
-                cls_dict[cls] = self.compute_img_num([cls])[0]
+        for key, obj in self.data_dict.items():
+            if (key in data_id) and (obj['cls'] in classes):
+                cls_dict[obj['cls']] += 1
 
         for pair_dict in prediction:
             ids = (pair_dict['ids'][0], pair_dict['ids'][1])
@@ -439,20 +403,17 @@ class Benchmark:
             print('Matching accuracy')
             for cls in classes:
                 print('{}: {}'.format(cls, 'p = {:.4f}±{:.4f}, r = {:.4f}±{:.4f}, f1 = {:.4f}±{:.4f}, cvg = {:.4f}' \
-                                      .format(result[cls]['precision'], result[cls]['precision_std'],
-                                              result[cls]['recall'], result[cls]['recall_std'], result[cls]['f1'],
-                                              result[cls]['f1_std'], result[cls]['coverage']
-                                              )))
+                    .format(result[cls]['precision'], result[cls]['precision_std'], result[cls]['recall'], result[cls]['recall_std'], result[cls]['f1'], result[cls]['f1_std'], result[cls]['coverage']
+                            )))
             print('average accuracy: {}'.format('p = {:.4f}±{:.4f}, r = {:.4f}±{:.4f}, f1 = {:.4f}±{:.4f}' \
-                                                .format(result['mean']['precision'], result['mean']['precision_std'],
-                                                        result['mean']['recall'], result['mean']['recall_std'],
-                                                        result['mean']['f1'], result['mean']['f1_std']
-                                                        )))
+                    .format(result['mean']['precision'], result['mean']['precision_std'], result['mean']['recall'], result['mean']['recall_std'], result['mean']['f1'], result['mean']['f1_std']
+                            )))
         return result
 
     def eval_cls(self, prediction, cls, verbose=False):
         """
         Evaluate test results for one class. Compute matching accuracy and coverage.
+
         :param prediction: prediction result.  [{'ids': (id1, id2), 'permmat': np.array or scipy.sparse},…]
         :param cls: evaluated class
         :param verbose: whether print the result
@@ -471,12 +432,9 @@ class Benchmark:
         cls_dict = 0
         pred_cls_dict = 0
 
-        if self.name != 'SPair71k':
-            for key, obj in self.data_dict.items():
-                if (key in data_id) and (obj['cls'] == cls):
-                    cls_dict += 1
-        else:
-            cls_dict = self.compute_img_num([cls])[0]
+        for key, obj in self.data_dict.items():
+            if (key in data_id) and (obj['cls'] == cls):
+                cls_dict += 1
 
         for pair_dict in prediction:
             ids = (pair_dict['ids'][0], pair_dict['ids'][1])
@@ -514,14 +472,14 @@ class Benchmark:
 
         if verbose:
             print('Class {}: {}'.format(cls, 'p = {:.4f}±{:.4f}, r = {:.4f}±{:.4f}, f1 = {:.4f}±{:.4f}, cvg = {:.4f}' \
-                                        .format(result['precision'], result['precision_std'], result['recall'],
-                                                result['recall_std'], result['f1'], result['f1_std'], result['coverage']
-                                                )))
+                .format(result['precision'], result['precision_std'], result['recall'], result['recall_std'], result['f1'], result['f1_std'], result['coverage']
+                        )))
         return result
 
     def rm_gt_cache(self, last_epoch=False):
         """
         Remove ground truth cache.
+
         :param last_epoch: whether this epoch is last epoch.
         """
         if os.path.exists(self.gt_cache_path):
