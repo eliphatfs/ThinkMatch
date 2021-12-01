@@ -76,15 +76,16 @@ class Benchmark:
             obj_dict['kpts'] = self.data_dict[keys]['kpts']
             with Image.open(str(img_file)) as img:
                 if self.sets != 'test':
-                    rand_factor = 0.2 * min(
-                        min(boundbox),
-                        img.height - max(boundbox[1], boundbox[3]),
-                        img.width - max(boundbox[0], boundbox[2]),
-                    )
                     import numpy
                     xmin, ymin, xmax, ymax = self.data_dict[keys]['bounds']
                     h = ymax - ymin
                     w = xmax - xmin
+                    rand_factor = 0.2 * min(
+                        min(boundbox),
+                        img.height - max(boundbox[1], boundbox[3]),
+                        img.width - max(boundbox[0], boundbox[2]),
+                        h, w
+                    )
                     x, y, x2, y2 = ((numpy.random.random([4]) - 0.5) * rand_factor).astype(numpy.int32)
                     xminn, yminn, xmaxn, ymaxn = (boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2)
                     for kpt in obj_dict['kpts']:
