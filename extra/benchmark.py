@@ -73,8 +73,8 @@ class Benchmark:
             with Image.open(str(img_file)) as img:
                 obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                 box=(boundbox[0], boundbox[1], boundbox[2], boundbox[3]))
+                import numpy
                 if False and self.sets != 'test':
-                    import numpy
                     xmin, ymin, xmax, ymax = self.data_dict[keys]['bounds']
                     h = ymax - ymin
                     w = xmax - xmin
