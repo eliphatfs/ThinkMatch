@@ -85,7 +85,7 @@ class Benchmark:
                     xmin, ymin, xmax, ymax = self.data_dict[keys]['bounds']
                     h = ymax - ymin
                     w = xmax - xmin
-                    x, y, x2, y2 = ((numpy.random.random() - 0.5) * rand_factor).astype(numpy.int32)
+                    x, y, x2, y2 = ((numpy.random.random([4]) - 0.5) * rand_factor).astype(numpy.int32)
                     xminn, yminn, xmaxn, ymaxn = (boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2)
                     for kpt in obj_dict['kpts']:
                         kpt['x'] = kpt['x'] / self.obj_resize[0] * w + xmin
