@@ -74,6 +74,10 @@ class Benchmark:
                 obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                 box=(boundbox[0], boundbox[1], boundbox[2], boundbox[3]))
                 import numpy
+                try:
+                    draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'before.png')
+                except:
+                    print(obj_dict['kpts'])
                 if self.sets != 'test':
                     xmin, ymin, xmax, ymax = self.data_dict[keys]['bounds']
                     h = ymax - ymin
@@ -95,7 +99,7 @@ class Benchmark:
                                      box=(boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2))
                 from extra.augmentations import draw_kps
                 try:
-                    draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
+                    draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'after.png')
                 except:
                     print(obj_dict['kpts'])
                 import pdb; pdb.set_trace()
