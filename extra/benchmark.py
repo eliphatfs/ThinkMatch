@@ -92,8 +92,11 @@ class Benchmark:
                     obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                      box=(boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2))
                     from extra.augmentations import draw_kps
-                    print(obj_dict['kpts'])
-                    draw_kps(img.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
+                    try:
+                        draw_kps(img.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'test.png')
+                    except:
+                        print(obj_dict['kpts'])
+                        raise
                 if self.name == 'CUB2011':
                     if not obj.mode == 'RGB':
                         obj = obj.convert('RGB')
