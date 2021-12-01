@@ -80,7 +80,7 @@ class Benchmark:
                         min(boundbox),
                         img.height - max(boundbox[1], boundbox[3]),
                         img.width - max(boundbox[0], boundbox[2]),
-                        0.2 * h, 0.2 * w
+                        0.5 * h, 0.5 * w
                     )
                     x, y, x2, y2 = ((numpy.random.random([4]) - 0.5) * rand_factor).astype(numpy.int32)
                     xminn, yminn, xmaxn, ymaxn = (boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2)
