@@ -202,7 +202,7 @@ class PointNetSetAbstraction(nn.Module):
             bn = self.mlp_bns[i]
             new_points =  F.relu(bn(conv(new_points)))
 
-        new_points = torch.sum(new_points, 2)
+        new_points = torch.max(new_points, 2)[0]
         new_xyz = new_xyz.permute(0, 2, 1)
         return new_xyz, new_points
 
@@ -259,7 +259,7 @@ class PointNetSetAbstractionMsg(nn.Module):
                 conv = self.conv_blocks[i][j]
                 bn = self.bn_blocks[i][j]
                 grouped_points =  F.relu(bn(conv(grouped_points)))
-            new_points = torch.sum(grouped_points, 2)  # [B, D', S]
+            new_points = torch.max(grouped_points, 2)[0]  # [B, D', S]
             new_points_list.append(new_points)
 
         new_xyz = new_xyz.permute(0, 2, 1)
