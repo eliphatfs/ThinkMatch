@@ -74,6 +74,7 @@ class Benchmark:
                 obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                 box=(boundbox[0], boundbox[1], boundbox[2], boundbox[3]))
                 import numpy
+                from extra.augmentations import draw_kps
                 try:
                     draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'before.png')
                 except Exception as e:
@@ -98,7 +99,6 @@ class Benchmark:
                         kpt['y'] = (kpt['y'] - yminn) * self.obj_resize[1] / (ymaxn - yminn)
                     obj = img.resize(self.obj_resize, resample=Image.BICUBIC,
                                      box=(boundbox[0] + x, boundbox[1] + y, boundbox[2] + x2, boundbox[3] + y2))
-                from extra.augmentations import draw_kps
                 try:
                     draw_kps(obj.copy(), numpy.array([[p['x'], p['y']] for p in obj_dict['kpts']]), 'after.png')
                 except Exception as e:
