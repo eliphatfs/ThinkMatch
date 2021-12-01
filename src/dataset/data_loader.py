@@ -157,12 +157,12 @@ class GMDataset(Dataset):
                             AdjustSharpness(1, 2),
                         ]),
                         transforms.RandomApply([
-                            transforms.Resize([random.randrange(64, 224)] * 2),
+                            transforms.Resize([random.randrange(24, 224)] * 2),
                             transforms.Resize([256, 256])
                         ]),
                     ]),
                     transforms.RandomApply([
-                        transforms.ColorJitter(0.1, 0.1, 0.1),
+                        transforms.ColorJitter(0.15, 0.15, 0.15),
                     ]),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),

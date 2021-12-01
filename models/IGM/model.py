@@ -136,8 +136,8 @@ class Net(nn.Module):
         # rand_src, rand_tgt = torch.rand(len(P_src), 64, 2).to(P_src), torch.rand(len(P_tgt), 64, 2).to(P_tgt)
         # P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
         if self.training:
-            P_src = P_src + torch.rand_like(P_src) * 0.03 - 0.015
-            P_tgt = P_tgt + torch.rand_like(P_tgt) * 0.03 - 0.015
+            P_src = P_src + torch.rand_like(P_src) * 0.02 - 0.01
+            P_tgt = P_tgt + torch.rand_like(P_tgt) * 0.02 - 0.01
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         # G_src, G_tgt = data_dict['pyg_graphs']
