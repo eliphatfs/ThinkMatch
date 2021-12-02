@@ -60,7 +60,7 @@ class Net(nn.Module):
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
-        self.pix2pt_norm = nn.LayerNorm(64, elementwise_affine=False)
+        self.pix2pt_norm = nn.InstanceNorm1d(64, affine=False)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
@@ -143,8 +143,8 @@ class Net(nn.Module):
 
         # G_src, G_tgt = data_dict['pyg_graphs']
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
-        y_src = self.pix2pt_norm(y_src.transpose(1, 2)).transpose(1, 2)
-        y_tgt = self.pix2pt_norm(y_tgt.transpose(1, 2)).transpose(1, 2)
+        y_src = self.pix2pt_norm(y_src)
+        y_tgt = self.pix2pt_norm(y_tgt)
         # G_src.x, G_tgt.x = batch_features(y_src, ns_src), batch_features(y_tgt, ns_tgt)
         # y_src = unbatch_features(y_src, self.sconv(G_src).x, ns_src)
         # y_src = unbatch_features(y_src, self.sconv(G_tgt).x, ns_tgt)
