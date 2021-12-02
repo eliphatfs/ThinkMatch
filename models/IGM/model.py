@@ -60,7 +60,7 @@ class Net(nn.Module):
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
-        self.pix2pt_norm = nn.LayerNorm(64)
+        self.pix2pt_norm = nn.LayerNorm(64, elementwise_affine=False)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
