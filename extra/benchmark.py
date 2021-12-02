@@ -101,8 +101,8 @@ class Benchmark:
             obj_dict['univ_size'] = self.data_dict[keys]['univ_size']
             if shuffle:
                 random.shuffle(obj_dict['kpts'])
-                if not test:
-                    L = len(obj_dict['kpts'])
+                L = len(obj_dict['kpts'])
+                if L and not test:
                     obj_dict['kpts'] = obj_dict['kpts'][:random.randrange(L // 2, L)]
             data_list.append(obj_dict)
 
