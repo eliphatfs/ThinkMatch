@@ -155,7 +155,7 @@ class GMDataset(Dataset):
                 imgs = nimgs
                 trans = transforms.Compose([
                     transforms.RandomApply([
-                        transforms.Resize([random.randrange(20, 224), random.randrange(20, 224)]),
+                        transforms.Resize([random.randrange(16, 224)] * 2),
                         transforms.Resize([256, 256])
                     ]),
                     transforms.RandomApply([
