@@ -17,7 +17,7 @@ from src.utils.data_to_cuda import data_to_cuda
 from extra.my_focal import MyFocalLoss
 
 from src.utils.config import cfg
-from pygmtools.benchmark import Benchmark
+from extra.benchmark import Benchmark
 import numpy
 
 
