@@ -102,7 +102,7 @@ class Benchmark:
             if shuffle:
                 random.shuffle(obj_dict['kpts'])
                 L = len(obj_dict['kpts'])
-                if L and not test:
+                if L and self.sets != 'test':
                     obj_dict['kpts'] = obj_dict['kpts'][:random.randrange(L // 2, L)]
             data_list.append(obj_dict)
 
