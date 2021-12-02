@@ -139,7 +139,8 @@ class GMDataset(Dataset):
                 if not pnt:
                     print("AUGMENT")
                     pnt = True
-                from extra.augmentations import HorizontalFlip, AdjustSharpness, RandomPerspective
+                from extra.augmentations import HorizontalFlip, AdjustSharpness, RandomPerspective, draw_kps
+                import uuid
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
@@ -149,6 +150,7 @@ class GMDataset(Dataset):
                     img, p = r1(to_pil(img), p)
                     nimgs.append(img)
                     nps.append(p)
+                    draw_kps(img, p, "data_vis/" + str(uuid.uuid4()) + ".png")
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
