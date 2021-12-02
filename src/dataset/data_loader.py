@@ -150,12 +150,12 @@ class GMDataset(Dataset):
                     img, p = r1(to_pil(img), p)
                     nimgs.append(img)
                     nps.append(p)
-                    draw_kps(img, p, "data_vis/" + str(uuid.uuid4()) + ".png")
+                    # draw_kps(img, p, "data_vis/" + str(uuid.uuid4()) + ".png")
                 ret_dict['Ps'] = nps
                 imgs = nimgs
                 trans = transforms.Compose([
                     transforms.RandomApply([
-                        transforms.Resize([random.randrange(24, 224)] * 2),
+                        transforms.Resize([random.randrange(20, 224), random.randrange(20, 224)]),
                         transforms.Resize([256, 256])
                     ]),
                     transforms.RandomApply([
