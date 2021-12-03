@@ -27,7 +27,7 @@ def cache(classes, bm):
                                     cls=cls,
                                     using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
         torch.manual_seed(cfg.RANDOM_SEED)
-        dataloader = get_dataloader(image_dataset, fix_seed=False, shuffle=False)
+        dataloader = get_dataloader(image_dataset, fix_seed=False, shuffle=False, batch_size=32)
         dataloaders.append(dataloader)
 
 
