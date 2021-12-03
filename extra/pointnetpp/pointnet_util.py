@@ -262,7 +262,11 @@ class PointNetSetAbstractionMsg(nn.Module):
                 bn = self.bn_blocks[i][j]
                 grouped_points =  F.relu(bn(conv(grouped_points)))
             # BDKS, BNN
-            mea = ea[torch.arange(len(ea), device=ea.device).unsqueeze(-1), group_idx]
+            mea = ea[
+                torch.arange(ea.shape[0], device=ea.device).unsqueeze(-1).unsqueeze(-1),
+                torch.arange(ea.shape[1], device=ea.device).unsqueeze(-1).unsqueeze(0),
+                group_idx
+            ]
             new_points = torch.max(grouped_points * mea.unsqueeze(1), 2)[0]  # [B, D', S]
             new_points_list.append(new_points)
 
