@@ -272,8 +272,8 @@ class PointNetSetAbstractionMsg(nn.Module):
             numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if x > 0.01 else '----'})
             if numpy.random.random() < 0.01:
                 print(ea[0].detach().cpu().numpy(), file=sys.stderr)
-                print(mea[0].detach().cpu().numpy(), file=sys.stderr)
-            new_points = torch.mean(grouped_points * mea.unsqueeze(1), 2)  # [B, D', S]
+                # print(mea[0].detach().cpu().numpy(), file=sys.stderr)
+            new_points = torch.max(grouped_points * mea.unsqueeze(1), 2)[0]  # [B, D', S]
             new_points_list.append(new_points)
 
         new_xyz = new_xyz.permute(0, 2, 1)

@@ -7,6 +7,10 @@ from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
 from extra.pointnetpp import p2_smaller
 from models.BBGM.sconv_archs import SiameseSConvOnNodes
+from src.loss_func import PermutationLoss
+
+
+loss_fn = PermutationLoss()
 
 
 class ResCls(nn.Module):
@@ -175,4 +179,7 @@ class Net(nn.Module):
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
+        data_dict['loss'] = loss_fn(
+            data_dict['ds_mat'], data_dict['gt_perm_mat'], ns_src, ns_tgt
+        ) + F.l1_loss(ea_src, torch.zeros_like(ea_src)) + F.l1_loss(ea_tgt, torch.zeros_like(ea_tgt))
         return data_dict
