@@ -226,7 +226,7 @@ class PointNetSetAbstractionMsg(nn.Module):
             self.conv_blocks.append(convs)
             self.bn_blocks.append(bns)
 
-    def forward(self, xyz, points, ea):
+    def forward(self, xyz, points):
         """
         Input:
             xyz: input points position data, [B, C, N]
@@ -261,20 +261,7 @@ class PointNetSetAbstractionMsg(nn.Module):
                 conv = self.conv_blocks[i][j]
                 bn = self.bn_blocks[i][j]
                 grouped_points =  F.relu(bn(conv(grouped_points)))
-            # BDKS, BNN
-            mea = ea[
-                torch.arange(ea.shape[0], device=ea.device).unsqueeze(-1).unsqueeze(-1),
-                torch.arange(ea.shape[1], device=ea.device).unsqueeze(-1).unsqueeze(0),
-                group_idx
-            ]
-            import sys
-            import numpy
-            numpy.set_printoptions(formatter={"float": lambda x: "%.2f" % x if x > 0.01 else '----'})
-            if numpy.random.random() < 0.01:
-                print(ea[0].detach().cpu().numpy(), file=sys.stderr)
-            # import pdb; pdb.set_trace()
-            # print(mea[0].detach().cpu().numpy(), file=sys.stderr)
-            new_points = torch.max(grouped_points * mea.unsqueeze(1), 2)[0]  # [B, D', S]
+            new_points = torch.max(grouped_points, 2)[0]  # [B, D', S]
             new_points_list.append(new_points)
 
         new_xyz = new_xyz.permute(0, 2, 1)
