@@ -12,7 +12,7 @@ class MultiScalePropagation(nn.Module):
     def __init__(self, additional_channel, g_channel, o_channel):
         super().__init__()
         self.sa = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.3, 0.6, 1.0], [24] * 5, 3 + additional_channel, [[64, 128], [128, 256], [64, 128], [32, 64], [24, 48]])
-        self.fp = PointNetFeaturePropagation(in_cannel=128 + 256 + 128 + 64 + 48 + 3 + additional_channel + g_channel, mlp=[512, 384])
+        self.fp = PointNetFeaturePropagation(128 + 256 + 128 + 64 + 48 + 3 + additional_channel + g_channel, mlp=[512, 384])
         self.proj = nn.Conv1d(384, o_channel, 1)
 
     def forward(self, xyz, g):
