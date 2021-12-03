@@ -32,7 +32,7 @@ def vis(data_dict):
         src, tgt = d(src), d(tgt)
         perm, gt = d(perm), d(gt)
         ks, kt = d(ks), d(kt)
-        c = numpy.concatenate([src, tgt], 1).permute(1, 2, 0)
+        c = numpy.concatenate([src, tgt], 1).transpose(1, 2, 0)
         c = (c - c.min()) / (c.max() - c.min()) * 254
         img = Image.fromarray(c.astype(numpy.uint8))
         draw = ImageDraw.Draw(img)
