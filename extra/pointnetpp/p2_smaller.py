@@ -31,10 +31,10 @@ class HALOAttention(nn.Module):
         self.QK = nn.Conv1d(emb_c, head_c, 1)
         self.exff = exff
         self.sinkhorn = sinkhorn
-        self.norm_src_1 = nn.GroupNorm(4, emb_c, affine=False)
-        self.norm_tgt_1 = nn.GroupNorm(4, emb_c, affine=False)
-        self.norm_src_2 = nn.GroupNorm(4, emb_c, affine=False)
-        self.norm_tgt_2 = nn.GroupNorm(4, emb_c, affine=False)
+        self.norm_src_1 = nn.GroupNorm(12, emb_c)
+        self.norm_tgt_1 = nn.GroupNorm(12, emb_c)
+        self.norm_src_2 = nn.GroupNorm(12, emb_c)
+        self.norm_tgt_2 = nn.GroupNorm(12, emb_c)
 
     def forward(self, x_src, x_tgt, n_src, n_tgt):
         # BCS, BCT
@@ -46,8 +46,8 @@ class HALOAttention(nn.Module):
         copied_tgt = torch.einsum("bst,bcs->bct", attention, x_src)
         x_src = self.norm_src_1(x_src + copied_src)
         x_tgt = self.norm_tgt_1(x_tgt + copied_tgt)
-        x_src = self.norm_src_2(x_src + self.exff(x_src))
-        x_tgt = self.norm_tgt_2(x_tgt + self.exff(x_tgt))
+        x_src = self.norm_src_2(self.exff(x_src))
+        x_tgt = self.norm_tgt_2(self.exff(x_tgt))
         return x_src, x_tgt
 
 

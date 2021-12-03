@@ -59,11 +59,11 @@ class HALO(nn.Module):
         self.sinkhorn = sinkhorn
         self.projection_g = ResCls(1, 1024, 256, 128)
         self.pp2 = p2_smaller.MultiScalePropagation(n_emb, 128, n_emb)
-        self.attn = p2_smaller.HALOAttention(sinkhorn, ResCls(0, n_emb, n_emb * 2 + 4, n_emb), n_emb, 36)
+        self.attn = p2_smaller.HALOAttention(sinkhorn, ResCls(0, n_emb, n_emb * 2, n_emb), n_emb, 36)
 
     def prepare_p(self, y_src, P_src, n_src):
-        resc = P_src.new_tensor(self.rescale)
-        P_src = P_src / resc
+        # resc = P_src.new_tensor(self.rescale)
+        P_src = (P_src - P_src.min(1, keepdim=True)[0]) / (P_src.max(1, keepdim=True)[0] - P_src.min(1, keepdim=True)[0] + 1e-3)
         P_src = P_src.transpose(1, 2)
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
@@ -83,8 +83,8 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = resnet34(True)
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 384)
-        self.tau = 5  # cfg.IGM.SK_TAU
+        self.pix2pt_proj = ResCls(1, feature_lat, 1024, 384)
+        self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
@@ -137,14 +137,6 @@ class Net(nn.Module):
         ghalo_src = torch.cat((glob_src, glob_tgt), 1)
         ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
         return F_src, F_tgt, ghalo_src, ghalo_tgt
-
-    def points(self, y_src, P_src, n_src, cls, g):
-        resc = P_src.new_tensor(self.rescale)
-        P_src = P_src / resc
-        P_src = P_src.transpose(1, 2)
-        key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
-        P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
-        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls, g)[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
