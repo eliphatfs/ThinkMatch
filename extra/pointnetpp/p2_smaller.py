@@ -57,12 +57,12 @@ class get_model(nn.Module):
         self.normal_channel = True
         self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.3, 0.6, 1.0], [24] * 5, 3 + additional_channel, [[64, 128], [128, 256], [64, 128], [32, 64], [24, 48]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 64 + 48 + 3, mlp=[300, 1024], group_all=True)
-        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 128 + 256 + 128 + 64 + 48, mlp=[1024, 512])
-        self.fp1 = PointNetFeaturePropagation(in_channel=518 + 32 * 0 + g_channel + additional_channel, mlp=[512, 256])
+        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 128 + 256 + 128 + 64 + 48, mlp=[512])
+        self.fp1 = PointNetFeaturePropagation(in_channel=518 + 32 * 0 + g_channel + additional_channel, mlp=[256])
         self.conv1 = nn.Conv1d(256, 32, 1)
         self.cls_emb = nn.Embedding(len(labels), 32)
 
-    def forward(self, xyz, cls, g):
+    def forward(self, xyz, cls, g, ea):
         # Set Abstraction layers
         B,C,N = xyz.shape
         if self.normal_channel:
@@ -71,7 +71,7 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
+        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, ea)
         l3_xyz, l3_points = self.sa3(l1_xyz, l1_points)
         # Feature Propagation layers
         l1_points = self.fp3(l1_xyz, l3_xyz, l1_points, l3_points)
