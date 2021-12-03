@@ -136,6 +136,8 @@ class Net(nn.Module):
         resc = P_src.new_tensor(self.rescale)
         P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
+        if self.training:
+            P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.2 - 0.1
         # P_src = (P_src - P_src.min(-1, keepdim=True)[0]) / (P_src.max(-1, keepdim=True)[0] - P_src.min(-1, keepdim=True)[0] + 1e-7)
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)

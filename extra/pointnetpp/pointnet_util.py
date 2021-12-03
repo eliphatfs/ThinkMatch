@@ -267,6 +267,11 @@ class PointNetSetAbstractionMsg(nn.Module):
                 torch.arange(ea.shape[1], device=ea.device).unsqueeze(-1).unsqueeze(0),
                 group_idx
             ]
+            import sys
+            import numpy
+            numpy.set_printoptions(formatter={"float": "%.3f".__mod__})
+            if numpy.random.random() < 0.01:
+                print(mea[0].detach().cpu().numpy(), file=sys.stderr)
             new_points = torch.max(grouped_points * mea.unsqueeze(1), 2)[0]  # [B, D', S]
             new_points_list.append(new_points)
 
