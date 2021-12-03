@@ -150,6 +150,7 @@ class Net(nn.Module):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
+        self.sinkhorn.batched_operation = not self.training
 
         feat_srcs, feat_tgts = [], []
         for feat in self.encode(torch.cat([src, tgt])):
