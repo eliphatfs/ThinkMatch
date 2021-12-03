@@ -307,6 +307,7 @@ class PointNetFeaturePropagation(nn.Module):
             dist_recip = 1.0 / (dists + 1e-8)
             norm = torch.sum(dist_recip, dim=2, keepdim=True)
             weight = dist_recip / norm
+            print(weight)
             interpolated_points = torch.sum(index_points(points2, idx) * weight.view(B, N, 3, 1), dim=2)
 
         if points1 is not None:
