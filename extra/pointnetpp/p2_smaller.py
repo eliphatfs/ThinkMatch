@@ -55,9 +55,10 @@ class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel):
         super(get_model, self).__init__()
         self.normal_channel = True
-        self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.3, 0.6, 1.0], [24] * 5, 3 + additional_channel, [[96, 128], [192, 256], [96, 128], [48, 64], [32, 48]])
-        self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 64 + 48 + 3, mlp=[300, 1024], group_all=True)
-        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 512 + 64 + 48 + g_channel, mlp=[1024, 512])
+        self.sa1 = PointNetSetAbstractionMsg(24, [2.0], [24], 3 + additional_channel, [[256, 512]])
+        # self.sa1 = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.3, 0.6, 1.0], [24] * 5, 3 + additional_channel, [[96, 128], [192, 256], [96, 128], [48, 64], [32, 48]])
+        self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 3, mlp=[300, 1024], group_all=True)
+        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 512 + g_channel, mlp=[1024, 512])
         self.fp1 = PointNetFeaturePropagation(in_channel=512, mlp=[256])
         self.conv1 = nn.Conv1d(256, 32, 1)
         self.cls_emb = nn.Embedding(len(labels), 32)
