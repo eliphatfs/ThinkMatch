@@ -61,6 +61,7 @@ class Net(nn.Module):
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
+        self.edge_proj = ResCls(2, feature_lat * 3, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(64, 128)
@@ -117,8 +118,7 @@ class Net(nn.Module):
         resc = P_src.new_tensor(self.rescale)
         P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
-        # if self.training:
-        #     P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.06 - 0.03
+        P_src = (P_src - P_src.min(-1, keepdim=True)[0]) / (P_src.max(-1, keepdim=True)[0] - P_src.min(-1, keepdim=True)[0] + 1e-7)
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls, g)[..., :y_src.shape[-1]]
@@ -132,21 +132,12 @@ class Net(nn.Module):
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
-        # resc = P_src.new_tensor(self.rescale)
-        # rand_src, rand_tgt = torch.rand(len(P_src), 64, 2).to(P_src), torch.rand(len(P_tgt), 64, 2).to(P_tgt)
-        # P_src, P_tgt = torch.cat((rand_src * resc, P_src), 1), torch.cat((rand_tgt * resc, P_tgt), 1)
         if self.training:
             P_src = P_src + torch.rand_like(P_src) * 2 - 1
             P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        # G_src, G_tgt = data_dict['pyg_graphs']
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
-        # y_src = self.pix2pt_norm(y_src)
-        # y_tgt = self.pix2pt_norm(y_tgt)
-        # G_src.x, G_tgt.x = batch_features(y_src, ns_src), batch_features(y_tgt, ns_tgt)
-        # y_src = unbatch_features(y_src, self.sconv(G_src).x, ns_src)
-        # y_src = unbatch_features(y_src, self.sconv(G_tgt).x, ns_tgt)
 
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
