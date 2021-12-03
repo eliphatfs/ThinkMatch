@@ -62,8 +62,9 @@ class HALO(nn.Module):
         self.attn = p2_smaller.HALOAttention(sinkhorn, ResCls(0, n_emb, n_emb * 2, n_emb), n_emb, 36)
 
     def prepare_p(self, y_src, P_src, n_src):
-        # resc = P_src.new_tensor(self.rescale)
+        resc = P_src.new_tensor(self.rescale)
         P_src = (P_src - P_src.min(1, keepdim=True)[0]) / (P_src.max(1, keepdim=True)[0] - P_src.min(1, keepdim=True)[0] + 1e-3)
+        # P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)

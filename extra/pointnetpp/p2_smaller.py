@@ -31,10 +31,10 @@ class HALOAttention(nn.Module):
         self.QK = nn.Conv1d(emb_c, head_c, 1)
         self.exff = exff
         self.sinkhorn = sinkhorn
-        self.norm_src_1 = nn.GroupNorm(12, emb_c)
-        self.norm_tgt_1 = nn.GroupNorm(12, emb_c)
-        self.norm_src_2 = nn.GroupNorm(12, emb_c)
-        self.norm_tgt_2 = nn.GroupNorm(12, emb_c)
+        self.norm_src_1 = nn.InstanceNorm1d(emb_c)
+        self.norm_tgt_1 = nn.InstanceNorm1d(emb_c)
+        self.norm_src_2 = nn.InstanceNorm1d(emb_c)
+        self.norm_tgt_2 = nn.InstanceNorm1d(emb_c)
 
     def forward(self, x_src, x_tgt, n_src, n_tgt):
         # BCS, BCT
