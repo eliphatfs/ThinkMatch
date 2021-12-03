@@ -22,7 +22,7 @@ def vis(data_dict):
     d = lambda x: x.detach().cpu().numpy()
     from PIL import ImageDraw
     import uuid
-    iss, its = data_dict['imgs']
+    iss, its = data_dict['images']
     kss, kts = data_dict['Ps']
     for src, tgt, perm, gt, ks, kt in zip(
         iss, its,
