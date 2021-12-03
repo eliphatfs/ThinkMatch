@@ -44,6 +44,7 @@ class GMDataset(Dataset):
 
         if self.problem_type == '2GM':
             self.id_combination, self.length = self.bm.get_id_combination(self.cls)
+            print([*map(len, self.id_combination)])
             self.length_list = []
             for cls in self.classes:
                 cls_length = self.bm.compute_length(cls)
@@ -137,7 +138,7 @@ class GMDataset(Dataset):
         if imgs[0] is not None:
             if self.augment:
                 if not pnt:
-                    print("AUGMENT")
+                    # print("AUGMENT")
                     pnt = True
                 from extra.augmentations import HorizontalFlip, AdjustSharpness, RandomPerspective, draw_kps
                 import uuid
