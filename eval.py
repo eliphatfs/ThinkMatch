@@ -95,6 +95,8 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
         cluster_ri_list = []
         prediction_cls = []
         for inputs in dataloaders[i]:
+            print(iter_num)
+            print(cfg.EVAL.SAMPLES, inputs['batch_size'])
             if iter_num >= cfg.EVAL.SAMPLES / inputs['batch_size']:
                 break
             if model.module.device != torch.device('cpu'):
