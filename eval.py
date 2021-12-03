@@ -40,7 +40,7 @@ def vis(data_dict):
             for j in range(perm.shape[1]):
                 if perm[i, j] > 0.5:
                     cor = gt[i, j] > 0.5
-                    draw.line([ks[i], kt[j] + [256, 0]], 'green' if cor else 'red', 2)
+                    draw.line([tuple(map(int, ks[i])), tuple(map(int, kt[j] + [256, 0]))], 'green' if cor else 'red', 2)
         img.save("pred_vis/%s.png" % str(uuid.uuid4()))
 
 
