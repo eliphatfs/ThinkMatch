@@ -53,8 +53,9 @@ def unbatch_features(orig, embeddings, num_vertices):
 
 
 class HALO(nn.Module):
-    def __init__(self, sinkhorn, n_emb):
+    def __init__(self, sinkhorn, n_emb, rescale):
         super().__init__()
+        self.rescale = rescale
         self.sinkhorn = sinkhorn
         self.projection_g = ResCls(1, 1024, 256, 128)
         self.pp2 = p2_smaller.MultiScalePropagation(n_emb, 128, n_emb)
@@ -89,8 +90,8 @@ class Net(nn.Module):
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
         self.final_proj = ResCls(1, 384, 384, 36)
-        self.halo_1 = HALO(self.sinkhorn, 384)
-        self.halo_2 = HALO(self.sinkhorn, 384)
+        self.halo_1 = HALO(self.sinkhorn, 384, self.rescale)
+        self.halo_2 = HALO(self.sinkhorn, 384, self.rescale)
         self.backbone_params = list(self.resnet.parameters())
 
     @property
