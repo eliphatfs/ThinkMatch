@@ -149,10 +149,10 @@ class Net(nn.Module):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
         if self.training:
-            P_src = P_src + torch.randn_like(P_src)
-            P_tgt = P_tgt + torch.randn_like(P_tgt)
-            P_src = P_src + torch.rand_like(P_src[..., :1]) * 20 - 10
-            P_tgt = P_tgt + torch.rand_like(P_tgt[..., :1]) * 20 - 10
+            # P_src = P_src + torch.randn_like(P_src)
+            # P_tgt = P_tgt + torch.randn_like(P_tgt)
+            P_src = P_src + torch.rand_like(P_src[..., :1]) * 10 - 5
+            P_tgt = P_tgt + torch.rand_like(P_tgt[..., :1]) * 10 - 5
         F_src, F_tgt, g_src, g_tgt = self.merge_feat(feat_srcs, feat_tgts, P_src, P_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
