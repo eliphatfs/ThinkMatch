@@ -61,11 +61,20 @@ class get_model(nn.Module):
         self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 128 + 256 + 128 + 64 + 48, mlp=[1024, 512])
         self.fp2 = PointNetFeaturePropagation(in_channel=512 + 128 + 256 + 128 + 64 + 48, mlp=[512, 384])
         self.fp1 = PointNetFeaturePropagation(in_channel=384 + 6 + 32 * 0 + g_channel + additional_channel, mlp=[512, 256])
+        self.scale_attentions = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(g_channel, 512, 1), nn.BatchNorm1d(512), nn.ReLU(),
+                nn.Conv1d(512, 64, 1), nn.BatchNorm1d(64), nn.ReLU(),
+                nn.Conv1d(64, 5, 1)
+            )
+            for _ in range(4)
+        ])
         self.conv1 = nn.Conv1d(256, 32, 1)
         self.cls_emb = nn.Embedding(len(labels), 32)
 
     def forward(self, xyz, g):
         # Set Abstraction layers
+        attns = [*map(lambda f: F.softmax(f(g).flatten(1)), self.scale_attentions)]
         B,C,N = xyz.shape
         if self.normal_channel:
             l0_points = xyz
@@ -73,8 +82,8 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
-        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
+        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, attns[0] + attns[1])
+        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points, attns[2] + attns[3])
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers
         l2_points = self.fp3(l2_xyz, l3_xyz, l2_points, l3_points)

@@ -226,7 +226,7 @@ class PointNetSetAbstractionMsg(nn.Module):
             self.conv_blocks.append(convs)
             self.bn_blocks.append(bns)
 
-    def forward(self, xyz, points):
+    def forward(self, xyz, points, attn):
         """
         Input:
             xyz: input points position data, [B, C, N]
@@ -243,7 +243,7 @@ class PointNetSetAbstractionMsg(nn.Module):
         S = min(N, self.npoint)
         new_xyz = index_points(xyz, farthest_point_sample(xyz, S))
         new_points_list = []
-        for i, radius in enumerate(self.radius_list):
+        for (i, radius), atn in zip(enumerate(self.radius_list), attn.t()):
             K = min(S, self.nsample_list[i])
             group_idx = query_ball_point(radius, K, xyz, new_xyz)
             grouped_xyz = index_points(xyz, group_idx)
@@ -261,7 +261,7 @@ class PointNetSetAbstractionMsg(nn.Module):
                 conv = self.conv_blocks[i][j]
                 bn = self.bn_blocks[i][j]
                 grouped_points =  F.relu(bn(conv(grouped_points)))
-            new_points = torch.max(grouped_points, 2)[0]  # [B, D', S]
+            new_points = torch.max(grouped_points, 2)[0] * atn.unsqueeze(-1).unsqueeze(-1)  # [B, D', S]
             new_points_list.append(new_points)
 
         new_xyz = new_xyz.permute(0, 2, 1)
