@@ -61,7 +61,7 @@ class HALO(nn.Module):
         self.pp2 = p2_smaller.MultiScalePropagation(n_emb, 128, n_emb)
         self.attn = p2_smaller.HALOAttention(sinkhorn, ResCls(0, n_emb, n_emb * 2 + 4, n_emb), n_emb, 36)
 
-    def prepare_p(self, y_src, P_src):
+    def prepare_p(self, y_src, P_src, n_src):
         resc = P_src.new_tensor(self.rescale)
         P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
@@ -73,7 +73,7 @@ class HALO(nn.Module):
     def forward(self, x_src, x_tgt, P_src, P_tgt, g_src, g_tgt, n_src, n_tgt):
         g_src, g_tgt = self.projection_g(g_src), self.projection_g(g_tgt)
         g_src, g_tgt = F.normalize(g_src, 1), F.normalize(g_tgt, 1)
-        x_src, x_tgt = self.prepare_p(x_src, P_src), self.prepare_p(x_tgt, P_tgt)
+        x_src, x_tgt = self.prepare_p(x_src, P_src, n_src), self.prepare_p(x_tgt, P_tgt, n_tgt)
         x_src, x_tgt = self.pp2(x_src, g_src), self.pp2(x_tgt, g_tgt)
         return self.attn(x_src, x_tgt, n_src, n_tgt)
 
