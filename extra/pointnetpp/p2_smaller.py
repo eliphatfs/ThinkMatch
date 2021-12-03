@@ -74,7 +74,7 @@ class get_model(nn.Module):
 
     def forward(self, xyz, g):
         # Set Abstraction layers
-        attns = [*map(lambda f: F.softmax(f(g).flatten(1)), self.scale_attentions)]
+        attns = [*map(lambda f: F.softmax(f(g).flatten(1), dim=1), self.scale_attentions)]
         B,C,N = xyz.shape
         if self.normal_channel:
             l0_points = xyz
