@@ -181,5 +181,5 @@ class Net(nn.Module):
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         data_dict['loss'] = loss_fn(
             data_dict['ds_mat'], data_dict['gt_perm_mat'], ns_src, ns_tgt
-        ) + 0.01 * F.l1_loss(ea_src, torch.zeros_like(ea_src)) + 0.01 * F.l1_loss(ea_tgt, torch.zeros_like(ea_tgt))
+        ) - torch.std(ea_src) - torch.std(ea_tgt)
         return data_dict
