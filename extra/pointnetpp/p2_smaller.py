@@ -8,6 +8,49 @@ from pygmtools.dataset import VOC2011_KPT_NAMES
 labels = sorted(VOC2011_KPT_NAMES)
 
 
+class MultiScalePropagation(nn.Module):
+    def __init__(self, additional_channel, g_channel, o_channel):
+        super().__init__()
+        self.sa = PointNetSetAbstractionMsg(24, [0.1, 0.2, 0.3, 0.6, 1.0], [24] * 5, 3 + additional_channel, [[64, 128], [128, 256], [64, 128], [32, 64], [24, 48]])
+        self.fp = PointNetFeaturePropagation(in_cannel=128 + 256 + 128 + 64 + 48 + 3 + additional_channel + g_channel, mlp=[512, 384])
+        self.proj = nn.Conv1d(384, o_channel, 1)
+
+    def forward(self, xyz, g):
+        B, C, N = xyz.shape
+        l0_points = xyz
+        l0_xyz = xyz[:, :3, :]
+        l1_xyz, l1_points = self.sa(l0_xyz, l0_points)
+        g = g.repeat(1, 1, N)
+        l0_points = self.fp(l0_xyz, l1_xyz, torch.cat([g, l0_points], 1), l1_points)
+        return self.proj(l0_points)
+
+
+class HALOAttention(nn.Module):
+    def __init__(self, sinkhorn, exff, emb_c, head_c):
+        super().__init__()
+        self.QK = nn.Conv1d(emb_c, head_c, 1)
+        self.exff = exff
+        self.sinkhorn = sinkhorn
+        self.norm_src_1 = nn.InstanceNorm1d(emb_c, affine=True)
+        self.norm_tgt_1 = nn.InstanceNorm1d(emb_c, affine=True)
+        self.norm_src_2 = nn.InstanceNorm1d(emb_c, affine=True)
+        self.norm_tgt_2 = nn.InstanceNorm1d(emb_c, affine=True)
+
+    def forward(self, x_src, x_tgt, n_src, n_tgt):
+        # BCS, BCT
+        qk_src = self.QK(x_src)
+        qk_tgt = self.QK(x_tgt)
+        act = torch.einsum("bcs,bct->bst", qk_src, qk_tgt)
+        attention = self.sinkhorn(act, n_src, n_tgt, dummy_row=True)
+        copied_src = torch.einsum("bst,bct->bcs", attention, x_tgt)
+        copied_tgt = torch.einsum("bst,bcs->bct", attention, x_src)
+        x_src = self.norm_src_1(x_src + copied_src)
+        x_tgt = self.norm_tgt_1(x_tgt + copied_tgt)
+        x_src = self.norm_src_2(x_src + self.exff(x_src))
+        x_tgt = self.norm_tgt_2(x_tgt + self.exff(x_tgt))
+        return x_src, x_tgt
+
+
 class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel):
         super(get_model, self).__init__()
