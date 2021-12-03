@@ -247,7 +247,9 @@ class PointNetSetAbstractionMsg(nn.Module):
             K = min(S, self.nsample_list[i])
             group_idx = query_ball_point(radius, K, xyz, new_xyz)
             grouped_xyz = index_points(xyz, group_idx)
-            grouped_xyz -= new_xyz.view(B, S, 1, C)
+            grouped_xyz[..., 0] = torch.linalg.norm(grouped_xyz - new_xyz.view(B, S, 1, C), dim=-1)
+            grouped_xyz[..., 1:] = 0
+            # grouped_xyz -= new_xyz.view(B, S, 1, C)
             if points is not None:
                 grouped_points = index_points(points, group_idx)
                 grouped_points = torch.cat([grouped_points, grouped_xyz], dim=-1)
