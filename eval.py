@@ -19,7 +19,7 @@ dataloaders = []
 
 def cache(classes, bm):
     dataloaders.clear()
-    for cls in tqdm.tqdm(classes):
+    for cls in (classes):
         image_dataset = GMDataset(name=cfg.DATASET_FULL_NAME,
                                     bm=bm,
                                     problem=cfg.PROBLEM.TYPE,
