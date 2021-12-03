@@ -456,9 +456,9 @@ def worker_init_rand(worker_id):
     np.random.seed(torch.initial_seed() % 2 ** 32)
 
 
-def get_dataloader(dataset, fix_seed=True, shuffle=False):
+def get_dataloader(dataset, fix_seed=True, shuffle=False, batch_size=cfg.BATCH_SIZE):
     import torch.utils.data
     return torch.utils.data.DataLoader(
-        dataset, batch_size=cfg.BATCH_SIZE, shuffle=shuffle, num_workers=cfg.DATALOADER_NUM, collate_fn=collate_fn,
-        pin_memory=False, worker_init_fn=None
+        dataset, batch_size=batch_size, shuffle=shuffle, num_workers=cfg.DATALOADER_NUM, collate_fn=collate_fn,
+        pin_memory=False, worker_init_fn=worker_init_fix if fix_seed else None
     )
