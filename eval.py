@@ -95,8 +95,6 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
         cluster_ri_list = []
         prediction_cls = []
         for inputs in dataloaders[i]:
-            print(iter_num)
-            print(cfg.EVAL.SAMPLES, inputs['batch_size'])
             if iter_num >= cfg.EVAL.SAMPLES / inputs['batch_size']:
                 break
             if model.module.device != torch.device('cpu'):
@@ -125,7 +123,7 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
                     eval_dict['perm_mat'] = perm_mat
                     prediction.append(eval_dict)
                     prediction_cls.append(eval_dict)
-                vis(outputs)
+                # vis(outputs)
 
                 if 'aff_mat' in outputs:
                     pred_obj_score = objective_score(outputs['perm_mat'], outputs['aff_mat'])

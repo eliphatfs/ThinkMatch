@@ -65,8 +65,8 @@ TRAIN:
 
 # Evaluation settings
 EVAL:
-  EPOCH: 6  # epoch to be tested
-  SAMPLES: 8  # number of tested pairs for each class
+  EPOCH: 30  # epoch to be tested
+  SAMPLES: 1000  # number of tested pairs for each class
 
 # model parameters
 IGM:
@@ -74,7 +74,7 @@ IGM:
   FEATURE_CHANNEL: 512
   SK_ITER_NUM: 10
   SK_EPSILON: 1.0e-10
-  SK_TAU: 6
+  SK_TAU: 5.65  # sqrt of 32
   GNN_FEAT:
     - 16
     - 16
