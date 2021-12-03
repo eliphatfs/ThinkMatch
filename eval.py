@@ -13,8 +13,34 @@ from src.utils.timer import Timer
 
 from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
+import numpy
 
 dataloaders = []
+
+
+def vis(data_dict):
+    d = lambda x: x.detach().cpu().numpy()
+    from PIL import ImageDraw
+    import uuid
+    iss, its = data_dict['imgs']
+    kss, kts = data_dict['Ps']
+    for src, tgt, perm, gt, ks, kt in zip(
+        iss, its,
+        data_dict['perm_mat'], data_dict['gt_perm_mat'],
+        kss, kts
+    ):
+        src, tgt = d(src), d(tgt)
+        perm, gt = d(perm), d(gt)
+        ks, kt = d(ks), d(kt)
+        from torchvision.transforms import ToPILImage
+        img = ToPILImage()(numpy.concatenate([src, tgt], 1))
+        draw = ImageDraw.Draw(img)
+        for i in range(perm.shape[0]):
+            for j in range(perm.shape[1]):
+                if perm[i, j] > 0.5:
+                    cor = gt[i, j] > 0.5
+                    draw.line([ks[i], kt[j] + [256, 0]], 'green' if cor else 'red', 2)
+        img.save("pred_vis/%s.png" % str(uuid.uuid4()))
 
 
 def cache(classes, bm):
@@ -27,7 +53,7 @@ def cache(classes, bm):
                                     cls=cls,
                                     using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
         torch.manual_seed(cfg.RANDOM_SEED)
-        dataloader = get_dataloader(image_dataset, fix_seed=False, shuffle=False, batch_size=32)
+        dataloader = get_dataloader(image_dataset, fix_seed=True, shuffle=True, batch_size=32)
         dataloaders.append(dataloader)
 
 
@@ -96,6 +122,7 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
                     eval_dict['perm_mat'] = perm_mat
                     prediction.append(eval_dict)
                     prediction_cls.append(eval_dict)
+                    vis(outputs)
 
                 if 'aff_mat' in outputs:
                     pred_obj_score = objective_score(outputs['perm_mat'], outputs['aff_mat'])
