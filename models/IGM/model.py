@@ -181,6 +181,6 @@ class Net(nn.Module):
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         data_dict['loss'] = loss_fn(
             data_dict['ds_mat'], data_dict['gt_perm_mat'], ns_src, ns_tgt
-        ) + (torch.relu(ea_src.sum(-2) - 3) + torch.relu(ea_src.sum(-1) - 3)).mean()\
-          + (torch.relu(ea_tgt.sum(-2) - 3) + torch.relu(ea_tgt.sum(-1) - 3)).mean()
+        ) + (torch.abs(ea_src.sum(-2) - 3) + torch.abs(ea_src.sum(-1) - 3)).mean()\
+          + (torch.abs(ea_tgt.sum(-2) - 3) + torch.abs(ea_tgt.sum(-1) - 3)).mean()
         return data_dict
