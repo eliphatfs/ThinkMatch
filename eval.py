@@ -20,7 +20,7 @@ dataloaders = []
 
 def vis(data_dict):
     d = lambda x: x.detach().cpu().numpy()
-    from PIL import ImageDraw
+    from PIL import ImageDraw, Image
     import uuid
     iss, its = data_dict['images']
     kss, kts = data_dict['Ps']
@@ -32,8 +32,9 @@ def vis(data_dict):
         src, tgt = d(src), d(tgt)
         perm, gt = d(perm), d(gt)
         ks, kt = d(ks), d(kt)
-        from torchvision.transforms import ToPILImage
-        img = ToPILImage()(numpy.concatenate([src, tgt], 1))
+        c = numpy.concatenate([src, tgt], 1).permute(1, 2, 0)
+        c = (c - c.min()) / (c.max() - c.min()) * 254
+        img = Image.fromarray(c.astype(numpy.uint8))
         draw = ImageDraw.Draw(img)
         for i in range(perm.shape[0]):
             for j in range(perm.shape[1]):
