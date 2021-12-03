@@ -32,7 +32,7 @@ def vis(data_dict):
         src, tgt = d(src), d(tgt)
         perm, gt = d(perm), d(gt)
         ks, kt = d(ks), d(kt)
-        c = numpy.concatenate([src, tgt], 1).transpose(1, 2, 0)
+        c = numpy.concatenate([src, tgt], -1).transpose(1, 2, 0)
         c = (c - c.min()) / (c.max() - c.min()) * 254
         img = Image.fromarray(c.astype(numpy.uint8))
         draw = ImageDraw.Draw(img)
@@ -125,7 +125,7 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
                     eval_dict['perm_mat'] = perm_mat
                     prediction.append(eval_dict)
                     prediction_cls.append(eval_dict)
-                    vis(outputs)
+                vis(outputs)
 
                 if 'aff_mat' in outputs:
                     pred_obj_score = objective_score(outputs['perm_mat'], outputs['aff_mat'])
