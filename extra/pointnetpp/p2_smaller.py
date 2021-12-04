@@ -83,9 +83,9 @@ class get_model(nn.Module):
             l0_xyz = xyz
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
         l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
-        l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
+        # l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers
-        l2_points = self.fp3(l2_xyz, l3_xyz, l2_points, l3_points)
+        # l2_points = self.fp3(l2_xyz, l3_xyz, l2_points, l3_points)
         l1_points = self.fp2(l1_xyz, l2_xyz, l1_points, l2_points)
         # cls_label = self.cls_emb(torch.tensor([labels.index(i) for i in cls], device=l1_points.device))
         # cls_label_one_hot = cls_label.view(B, 32, 1).repeat(1, 1, N)
