@@ -243,7 +243,7 @@ class PointNetSetAbstractionMsg(nn.Module):
         S = min(N, self.npoint)
         new_xyz = index_points(xyz, farthest_point_sample(xyz, S))
         new_points_list = []
-        for (i, radius), atn in zip(enumerate(self.radius_list), attns):
+        for (i, radius), atn in zip(enumerate(self.radius_list), attns.t()):
             K = min(S, self.nsample_list[i])
             group_idx = query_ball_point(radius, K, xyz, new_xyz)
             grouped_xyz = index_points(xyz, group_idx)
