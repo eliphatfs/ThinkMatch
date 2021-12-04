@@ -145,7 +145,7 @@ class Net(nn.Module):
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         return self.dgcnn(
-            torch.cat((P_src, y_src), 1) * key_mask_src, g,
+            torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), g,
             torch.round(torch.sqrt(n_src.float()) + 1).long()
         )[..., :y_src.shape[-1]]
 
