@@ -65,7 +65,7 @@ class get_model(nn.Module):
             nn.Sequential(
                 nn.Conv1d(g_channel, 512, 1), nn.BatchNorm1d(512), nn.ReLU(),
                 nn.Conv1d(512, 64, 1), nn.BatchNorm1d(64), nn.ReLU(),
-                nn.Conv1d(64, 5, 1)
+                nn.Conv1d(64, 3, 1)
             )
             for _ in range(2)
         ])
@@ -82,7 +82,8 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        print(attns[0].detach().cpu())
+        print("0", attns[0].detach().cpu())
+        print("1", attns[1].detach().cpu())
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, attns[0])
         l2_xyz, l2_points = self.sa2(l1_xyz, l1_points, attns[1])
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
