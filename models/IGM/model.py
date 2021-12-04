@@ -139,7 +139,10 @@ class Net(nn.Module):
     def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, g):
         resc = P_src.new_tensor(self.rescale)
         P_src, P_tgt = P_src / resc, P_tgt / resc
+        P_src = (P_src - P_src.min(1, keepdim=True)[0]) / (P_src.max(1, keepdim=True)[0] - P_src.min(1, keepdim=True)[0] + 1e-6)
+        P_tgt = (P_tgt - P_tgt.min(1, keepdim=True)[0]) / (P_tgt.max(1, keepdim=True)[0] - P_tgt.min(1, keepdim=True)[0] + 1e-6)
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
+        
         if self.training:
             P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
             P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
