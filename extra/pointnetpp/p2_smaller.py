@@ -74,7 +74,6 @@ class get_model(nn.Module):
 
     def forward(self, xyz, g):
         # Set Abstraction layers
-        attns = [*map(lambda f: F.softmax(f(g).flatten(1), dim=1) * 3, self.scale_attentions)]
         B,C,N = xyz.shape
         if self.normal_channel:
             l0_points = xyz
@@ -82,10 +81,8 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        # print("0", attns[0].detach().cpu())
-        # print("1", attns[1].detach().cpu())
-        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, attns[0])
-        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points, attns[1])
+        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
+        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers
         l2_points = self.fp3(l2_xyz, l3_xyz, l2_points, l3_points)
