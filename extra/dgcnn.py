@@ -44,16 +44,9 @@ def get_graph_feature(x, bk, idx=None):
     x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)
     
     feature = torch.cat((feature-x, x), dim=3).permute(0, 3, 1, 2).contiguous()
-    # torch.meshgrid()
-    # print(feature[
-    #     torch.arange(batch_size, device=feature.device).unsqueeze(-1),
-    #     ...,
-    #     torch.arange(k, device=feature.device) >= bk.unsqueeze(-1)
-    # ].shape)
     feature[
-        torch.arange(batch_size, device=feature.device).unsqueeze(-1),
-        ...,
-        torch.arange(k, device=feature.device) >= bk.unsqueeze(-1)
+        torch.arange(k, device=feature.device)
+        >= bk.reshape(-1, 1, 1, 1)
     ] = 0
   
     return feature
