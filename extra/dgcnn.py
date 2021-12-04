@@ -90,7 +90,7 @@ class DGCNN(nn.Module):
 
     def forward(self, x, g, bk):
         # batch_size = x.size(0)
-        x = get_graph_feature(x, bk, knn(x[:, :3], k=bk.max()))
+        x = get_graph_feature(x, bk, knn(x, k=bk.max()))
         x = self.conv1(x)
         x1 = x.max(dim=-1, keepdim=False)[0]
 
