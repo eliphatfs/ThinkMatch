@@ -61,8 +61,8 @@ class DGCNN(nn.Module):
         
         self.bn1 = nn.BatchNorm2d(64)
         # self.bn2 = nn.BatchNorm2d(64)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.bn4 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.bn4 = nn.BatchNorm2d(128)
         self.bn5 = nn.BatchNorm1d(emb_dims)
 
         self.conv1 = nn.Sequential(nn.Conv2d(6 + extra_dims * 2, 64, kernel_size=1, bias=False),
@@ -71,13 +71,13 @@ class DGCNN(nn.Module):
         # self.conv2 = nn.Sequential(nn.Conv2d(64*2, 64, kernel_size=1, bias=False),
         #                            self.bn2,
         #                            nn.LeakyReLU(negative_slope=0.2))
-        self.conv3 = nn.Sequential(nn.Conv2d(64*2, 64, kernel_size=1, bias=False),
+        self.conv3 = nn.Sequential(nn.Conv2d(64*2, 128, kernel_size=1, bias=False),
                                    self.bn3,
                                    nn.LeakyReLU(negative_slope=0.2))
-        self.conv4 = nn.Sequential(nn.Conv2d(64*2, 64, kernel_size=1, bias=False),
+        self.conv4 = nn.Sequential(nn.Conv2d(128*2, 128, kernel_size=1, bias=False),
                                    self.bn4,
                                    nn.LeakyReLU(negative_slope=0.2))
-        self.conv5 = nn.Sequential(nn.Conv1d(192 + g_dims, emb_dims, kernel_size=1, bias=False),
+        self.conv5 = nn.Sequential(nn.Conv1d(330 + g_dims, emb_dims, kernel_size=1, bias=False),
                                    self.bn5,
                                    nn.LeakyReLU(negative_slope=0.2))
         # self.linear1 = nn.Linear(args.emb_dims*2, 512, bias=False)
@@ -90,7 +90,8 @@ class DGCNN(nn.Module):
 
     def forward(self, x, g, bk):
         # batch_size = x.size(0)
-        x = get_graph_feature(x, bk, knn(x, k=bk.max()))
+        nns = knn(x[:, :3], k=bk.max())
+        x = get_graph_feature(x, bk, nns)
         x = self.conv1(x)
         x1 = x.max(dim=-1, keepdim=False)[0]
 
@@ -98,11 +99,11 @@ class DGCNN(nn.Module):
         # x = self.conv2(x)
         # x2 = x.max(dim=-1, keepdim=False)[0]
 
-        x = get_graph_feature(x1, bk)
+        x = get_graph_feature(x1, bk, nns)
         x = self.conv3(x)
         x3 = x.max(dim=-1, keepdim=False)[0]
 
-        x = get_graph_feature(x3, bk)
+        x = get_graph_feature(x3, bk, nns)
         x = self.conv4(x)
         x4 = x.max(dim=-1, keepdim=False)[0]
 
