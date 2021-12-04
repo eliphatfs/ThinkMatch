@@ -82,8 +82,8 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        print("0", attns[0].detach().cpu())
-        print("1", attns[1].detach().cpu())
+        # print("0", attns[0].detach().cpu())
+        # print("1", attns[1].detach().cpu())
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, attns[0])
         l2_xyz, l2_points = self.sa2(l1_xyz, l1_points, attns[1])
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
