@@ -31,7 +31,20 @@ def spot_dict(model, kv):
         if isinstance(layer, (nn.Linear, nn.Conv1d, nn.Conv2d)):
             kv[name].append((layer.weight ** 2).mean().item())
 
-def spot():
+
+def spot_hook(model, kv):
+    def _hook(clos_name):
+        def __hook(module, i, o):
+            kv[clos_name].append([o.mean(), o.std(), o.min(), o.max()])
+    
+        return __hook
+
+    for name, layer in model.named_modules():
+        if isinstance(layer, (nn.Linear, nn.Conv1d, nn.Conv2d)):
+            layer.register_forward_hook(_hook(name))
+
+
+def spot_norm():
     cfg_from_file("experiments/igm.yaml")
     net = Net()
     kv = collections.defaultdict(list)
@@ -45,5 +58,21 @@ def spot():
     plotlib.savefig("spot.png")
 
 
+def spot_out_minmax():
+    cfg_from_file("experiments/igm.yaml")
+    net = Net()
+    kv = collections.defaultdict(list)
+    load_model(net, "output/igm_voc/params/params_%04d.pt" % 10)
+    spot_hook(net, kv)
+    plotlib.figure(figsize=[60, 18])
+    kvs = []
+    labels = []
+    for k, v in kv.items():
+        kvs.extend(numpy.array(v).T)
+        labels.extend([k + x for x in [".mean", ".std", ".min", ".max"]])
+    plotlib.boxplot(kvs, labels=labels)
+    plotlib.legend()
+    plotlib.savefig("spot.png")
+
 if __name__ == "__main__":
-    spot()
+    spot_out_minmax()
