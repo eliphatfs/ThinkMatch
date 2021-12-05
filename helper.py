@@ -70,8 +70,8 @@ def spot_out_minmax():
     for k, v in kv.items():
         kvs.extend(numpy.array(v).T)
         labels.extend([k + x for x in [".mean", ".std", ".min", ".max"]])
-    plotlib.boxplot(numpy.array(kvs).T, labels=labels)
     import pdb; pdb.set_trace()
+    plotlib.boxplot(numpy.array(kvs).T, labels=labels)
     plotlib.legend()
     plotlib.savefig("spot.png")
 
