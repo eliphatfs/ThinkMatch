@@ -20,9 +20,10 @@ class Rotation(torch.nn.Module):
             [math.cos(self.r), -math.sin(self.r)],
             [+math.sin(self.r), math.cos(self.r)]
         ])
-        draw_kps(rimg, torch.matmul(p, rot), "after.png")
+        tr = p.new_tensor(list(img.size)) / 2
+        draw_kps(rimg, torch.matmul(p - tr, rot) + tr, "after.png")
         import pdb; pdb.set_trace()
-        return rimg, torch.matmul(p, rot)
+        return rimg, torch.matmul(p - tr, rot) + tr
 
 
 class ImageTranspose(torch.nn.Module):
