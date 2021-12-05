@@ -54,33 +54,20 @@ class HALOAttention(nn.Module):
 class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel):
         super(get_model, self).__init__()
-        self.normal_channel = True
-        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[64, 128], [128, 256], [64, 128]])
-        self.sa2 = PointNetSetAbstractionMsg(36, [0.3, 0.6, 1.0], [36] * 3, 512, [[96, 128], [192, 256], [96, 128]])
-        self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 3, mlp=[300, 1024], group_all=True)
-        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 128 + 256 + 128, mlp=[1024, 512])
-        self.fp2 = PointNetFeaturePropagation(in_channel=512 + 128 + 256 + 128, mlp=[512, 384])
-        self.fp1 = PointNetFeaturePropagation(in_channel=384 + 6 + 32 * 0 + g_channel + additional_channel, mlp=[512, 256])
-        self.scale_attentions = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(g_channel, 512, 1), nn.BatchNorm1d(512), nn.ReLU(),
-                nn.Conv1d(512, 64, 1), nn.BatchNorm1d(64), nn.ReLU(),
-                nn.Conv1d(64, 3, 1)
-            )
-            for _ in range(2)
-        ])
+        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[32, 64], [64, 128], [32, 64]])
+        self.sa2 = PointNetSetAbstractionMsg(36, [0.4, 1.0], [36] * 3, 256, [[128, 256], [32, 64]])
+        self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=320 + 3, mlp=[256, 1024], group_all=True)
+        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 320, mlp=[1024, 512])
+        self.fp2 = PointNetFeaturePropagation(in_channel=320 + 256, mlp=[384])
+        self.fp1 = PointNetFeaturePropagation(in_channel=384 + 6 + 32 * 0 + g_channel + additional_channel, mlp=[256])
         self.conv1 = nn.Conv1d(256, 32, 1)
-        self.cls_emb = nn.Embedding(len(labels), 32)
+        # self.cls_emb = nn.Embedding(len(labels), 32)
 
     def forward(self, xyz, g):
         # Set Abstraction layers
-        B,C,N = xyz.shape
-        if self.normal_channel:
-            l0_points = xyz
-            l0_xyz = xyz[:,:3,:]
-        else:
-            l0_points = xyz
-            l0_xyz = xyz
+        B, C, N = xyz.shape
+        l0_points = xyz
+        l0_xyz = xyz[:, :3, :]
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
         l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
@@ -93,8 +80,6 @@ class get_model(nn.Module):
         l0_points = self.fp1(l0_xyz, l1_xyz, torch.cat([g, l0_xyz, l0_points], 1), l1_points)
         # FC layers
         x = self.conv1(l0_points)
-        # x = F.log_softmax(x, dim=1)
-        # x = x.permute(0, 2, 1)
         return x
 
 

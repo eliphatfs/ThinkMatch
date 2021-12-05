@@ -1,10 +1,28 @@
 import torch
 from PIL import Image, ImageEnhance
 import copy
+import math
 import numbers
 from collections.abc import Sequence
 from typing import Tuple, List
 from torchvision.transforms import functional as F
+
+
+class Rotation(torch.nn.Module):
+    def __init__(self, r):
+        super().__init__()
+        self.r = r
+
+    def forward(self, img: Image.Image, p):
+        draw_kps(img, p, "before.png")
+        rimg = img.rotate(self.r, Image.BILINEAR)
+        rot = p.new_tensor([
+            [math.cos(self.r), +math.sin(self.r)],
+            [-math.sin(self.r), math.cos(self.r)]
+        ])
+        draw_kps(rimg, torch.matmul(p, rot), "after.png")
+        import pdb; pdb.set_trace()
+        return rimg, torch.matmul(p, rot)
 
 
 class ImageTranspose(torch.nn.Module):

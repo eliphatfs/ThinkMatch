@@ -9,7 +9,6 @@ from src.build_graphs import build_graphs
 from src.factorize_graph_matching import kronecker_sparse, kronecker_torch
 from src.sparse_torch import CSRMatrix3d
 from src.dataset import *
-
 from src.utils.config import cfg
 
 from itertools import combinations, product
@@ -144,14 +143,15 @@ class GMDataset(Dataset):
                 if not pnt:
                     # print("AUGMENT")
                     pnt = True
-                from extra.augmentations import HorizontalFlip, RandomPerspective, ImageTranspose
+                from extra.augmentations import HorizontalFlip, Rotation
                 import uuid
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
                 r1 = HorizontalFlip(random.random() < 0.5)
+                r2 = Rotation(random.uniform(-0.2, 0.2)) if random.random() < 0.7 else lambda *x: x
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r1(to_pil(img), p)
+                    img, p = r2(*r1(to_pil(img), p))
                     nimgs.append(img)
                     nps.append(p)
                     # draw_kps(img, p, "data_vis/" + str(uuid.uuid4()) + ".png")
@@ -162,9 +162,9 @@ class GMDataset(Dataset):
                         transforms.Resize([random.randrange(24, 224)] * 2),
                         transforms.Resize([256, 256])
                     ]),
-                    # transforms.RandomApply([
-                    #     transforms.ColorJitter(0.15, 0.15, 0.15),
-                    # ]),
+                    transforms.RandomApply([
+                        transforms.ColorJitter(0.15, 0.15, 0.15, 0.05),
+                    ]),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
