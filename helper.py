@@ -84,6 +84,7 @@ def spot_out_minmax():
     net = Net()
     kv = collections.defaultdict(list)
     load_model(net, "output/igm_voc/params/params_%04d.pt" % 10)
+    net.cuda()
     net.eval()
     spot_hook(net, kv)
     plotlib.figure(figsize=[54, 20])
