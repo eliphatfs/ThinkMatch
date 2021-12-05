@@ -36,7 +36,7 @@ def spot_dict(model, kv):
 def spot_hook(model, kv):
     def _hook(clos_name):
         def __hook(module, i, o):
-            kv[clos_name].append([o.mean(), o.std(), o.min(), o.max()])
+            kv[clos_name].append([o.mean().item(), o.std().item(), o.min().item(), o.max().item()])
     
         return __hook
 
