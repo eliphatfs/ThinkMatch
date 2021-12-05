@@ -7,6 +7,21 @@ from typing import Tuple, List
 from torchvision.transforms import functional as F
 
 
+class ImageTranspose(torch.nn.Module):
+    def __init__(self, t):
+        super().__init__()
+        self.t = t
+
+    def forward(self, img: Image.Image, p):
+        if self.t:
+            # draw_kps(img, p, "before.png")
+            img = img.transpose(Image.TRANSPOSE)
+            p = p.clone()
+            p[..., 0], p[..., 1] = p[..., 1], p[..., 0]
+            # draw_kps(img, p, "after.png")
+            # import pdb; pdb.set_trace()
+        return img, p
+
 class HorizontalFlip(torch.nn.Module):
     def __init__(self, flip):
         super().__init__()
