@@ -63,12 +63,12 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 80)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
         self.pix2cl_proj = ResCls(1, 1024, 512, 100)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(80, 100)
+        self.pn = p2_smaller.get_model(64, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
