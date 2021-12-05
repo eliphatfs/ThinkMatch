@@ -192,6 +192,6 @@ class Net(nn.Module):
             folding_src,
             folding_tgt
         )
-        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        data_dict['ds_mat'] = torch.sigmoid(sim)  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
