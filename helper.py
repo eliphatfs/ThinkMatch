@@ -41,6 +41,7 @@ def spot():
     plotlib.figure(figsize=[30, 30])
     for k, v in kv.items():
         plotlib.plot(numpy.array(v) / v[0], label=k)
+    plotlib.legend()
     plotlib.savefig("spot.png")
 
 
