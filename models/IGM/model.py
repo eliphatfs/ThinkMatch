@@ -155,7 +155,7 @@ class Net(nn.Module):
         y_cat = torch.cat((y_src, y_tgt), -1)
         e_cat = torch.zeros([
             e_src.shape[0], e_src.shape[1],
-            e_src[2] + e_tgt[2], e_src[3] + e_tgt[3]
+            e_src.shape[2] + e_tgt.shape[2], e_src.shape[3] + e_tgt.shape[3]
         ], dtype=e_src.dtype, device=e_src.device)
         e_cat[..., :e_src[2], :e_src[3]] = e_src
         e_cat[..., e_src[2]:, e_src[3]:] = e_tgt
