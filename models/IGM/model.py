@@ -65,7 +65,7 @@ class Net(nn.Module):
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
-        self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 32)
+        self.edge_proj = ResCls(2, feature_lat - 512, 1024, 32)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(64, 128, 32)
@@ -123,18 +123,14 @@ class Net(nn.Module):
         # P: BN2
         # n: B
         ep = ((P.unsqueeze(-2) + P.unsqueeze(-3)) / 2).flatten(1, 2)  # B N^2 2
-        L = (
-            torch.cat([F, torch.zeros_like(F)], 1).unsqueeze(-1) +
-            torch.cat([torch.zeros_like(F), F], 1).unsqueeze(-2)
-        ).flatten(2)  # B2CN^2
         E = torch.cat([
             my_align(feat, ep, self.rescale) for feat in feats
         ], 1)  # BCN^2
-        CE = torch.cat([L, E], 1)
+        # CE = torch.cat([E], 1)
         mask = torch.arange(F.shape[-1], device=n.device).expand(len(F), F.shape[-1]) < n.unsqueeze(-1)
         # BN
         mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
-        return (self.edge_proj(CE) * mask.flatten(1).unsqueeze(1)).reshape(F.shape[0], -1, F.shape[-1], F.shape[-1])
+        return (self.edge_proj(E) * mask.flatten(1).unsqueeze(1)).reshape(F.shape[0], -1, F.shape[-1], F.shape[-1])
     
     def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, e_src, e_tgt, g):
         resc = P_src.new_tensor(self.rescale)
@@ -192,6 +188,6 @@ class Net(nn.Module):
             folding_src,
             folding_tgt
         )
-        data_dict['ds_mat'] = torch.sigmoid(sim)  # self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         return data_dict
