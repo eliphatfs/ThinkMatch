@@ -111,5 +111,36 @@ def spot_out_minmax():
     _do("test")
     plotlib.savefig("spot.png")
 
+
+def merge_state_dicts(dicts):
+    refd = dicts[0]
+    result = dict()
+    if isinstance(refd, dict):
+        for k in refd.keys():
+            result[k] = merge_state_dicts([d[k] for d in dicts])
+        return result
+    else:
+        return sum(dicts)
+
+
+def divide_state_dict(d, n):
+    result = dict()
+    if isinstance(d, dict):
+        for k in d.keys():
+            result[k] = divide_state_dict(d[k], n)
+        return result
+    else:
+        return d / n
+
+
+def self_ensemble():
+    cfg_from_file("experiments/igm.yaml")
+    states = []
+    path_fmt = "output/igm_voc/params/params_%04d.pt"
+    for i in range(1, 11):
+        states.append(torch.load(path_fmt % i))
+    torch.save(divide_state_dict(merge_state_dicts(states), 10), path_fmt % 9999)
+
+
 if __name__ == "__main__":
-    spot_out_minmax()
+    self_ensemble()
