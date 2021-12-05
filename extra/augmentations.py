@@ -17,8 +17,8 @@ class Rotation(torch.nn.Module):
         draw_kps(img, p, "before.png")
         rimg = img.rotate(math.degrees(self.r), Image.BILINEAR)
         rot = p.new_tensor([
-            [math.cos(self.r), +math.sin(self.r)],
-            [-math.sin(self.r), math.cos(self.r)]
+            [math.cos(self.r), -math.sin(self.r)],
+            [+math.sin(self.r), math.cos(self.r)]
         ])
         draw_kps(rimg, torch.matmul(p, rot), "after.png")
         import pdb; pdb.set_trace()
