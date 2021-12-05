@@ -36,7 +36,7 @@ def spot_dict(model, kv):
 def spot_hook(model, kv):
     def _hook(clos_name):
         def __hook(module, i, o):
-            kv[clos_name].append([o.mean().item(), o.std().item(), o.min().item(), o.max().item()])
+            kv[clos_name].extend([o.mean().item(), o.std().item(), o.min().item(), o.max().item()])
     
         return __hook
 
@@ -87,7 +87,7 @@ def spot_out_minmax():
     net.cuda()
     net.eval()
     spot_hook(net, kv)
-    plotlib.figure(figsize=[108, 24])
+    plotlib.figure(figsize=[54, 24])
 
     def _do(split):
         for i, inputs in enumerate(dataloader[split]):
@@ -99,8 +99,8 @@ def spot_out_minmax():
         kvs = []
         labels = []
         for k, v in kv.items():
-            kvs.extend(numpy.array(v).T)
-            labels.extend([k + x for x in [".mean", ".std", ".min", ".max"]])
+            kvs.append(numpy.array(v))
+            labels.extend([k])
         plotlib.boxplot(numpy.array(kvs).T, labels=labels)
         plotlib.xticks(rotation = -90)
         plotlib.xlabel(split)
