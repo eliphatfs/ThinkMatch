@@ -150,9 +150,8 @@ class GMDataset(Dataset):
                 nps = []
                 to_pil = transforms.ToPILImage()
                 r1 = HorizontalFlip(random.random() < 0.5)
-                r2 = ImageTranspose(random.random() < 0.5)
                 for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r2(*r1(to_pil(img), p))
+                    img, p = r1(to_pil(img), p)
                     nimgs.append(img)
                     nps.append(p)
                     # draw_kps(img, p, "data_vis/" + str(uuid.uuid4()) + ".png")
