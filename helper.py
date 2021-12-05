@@ -60,6 +60,7 @@ def spot_norm():
 
 
 def spot_out_minmax():
+    cfg_from_file("experiments/igm.yaml")
     dataset_len = {'train': cfg.TRAIN.EPOCH_ITERS * cfg.BATCH_SIZE, 'test': cfg.EVAL.SAMPLES}
     ds_dict = cfg[cfg.DATASET_FULL_NAME] if ('DATASET_FULL_NAME' in cfg) and (cfg.DATASET_FULL_NAME in cfg) else {}
     benchmark = {
@@ -80,7 +81,6 @@ def spot_out_minmax():
         for x in ('train', 'test')}
     dataloader = {x: get_dataloader(image_dataset[x], shuffle=True, fix_seed=(x == 'test'), batch_size=cfg.BATCH_SIZE if (x != 'test') else 32)
                   for x in ('train', 'test')}
-    cfg_from_file("experiments/igm.yaml")
     net = Net()
     kv = collections.defaultdict(list)
     load_model(net, "output/igm_voc/params/params_%04d.pt" % 10)
