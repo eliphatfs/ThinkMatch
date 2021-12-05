@@ -157,8 +157,8 @@ class Net(nn.Module):
             e_src.shape[0], e_src.shape[1],
             e_src.shape[2] + e_tgt.shape[2], e_src.shape[3] + e_tgt.shape[3]
         ], dtype=e_src.dtype, device=e_src.device)
-        e_cat[..., :e_src[2], :e_src[3]] = e_src
-        e_cat[..., e_src[2]:, e_src[3]:] = e_tgt
+        e_cat[..., :e_src.shape[2], :e_src.shape[3]] = e_src
+        e_cat[..., e_src.shape[2]:, e_src.shape[3]:] = e_tgt
         return self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, e_cat, g)[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
