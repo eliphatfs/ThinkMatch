@@ -172,7 +172,7 @@ class Net(nn.Module):
         # ea_src = self.edge_activations(feat_srcs, F_src, P_src, ns_src)
         # ea_tgt = self.edge_activations(feat_tgts, F_tgt, P_tgt, ns_tgt)
 
-        y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
+        y_src, y_tgt = self.pix2pt_proj(F_src + torch.randn_like(F_src) * 0.02), self.pix2pt_proj(F_tgt + torch.randn_like(F_src) * 0.02)
 
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
