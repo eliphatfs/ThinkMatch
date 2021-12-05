@@ -14,15 +14,15 @@ class Rotation(torch.nn.Module):
         self.r = r
 
     def forward(self, img: Image.Image, p):
-        draw_kps(img, p, "before.png")
+        # draw_kps(img, p, "before.png")
         rimg = img.rotate(math.degrees(self.r), Image.BILINEAR)
         rot = p.new_tensor([
             [math.cos(self.r), -math.sin(self.r)],
             [+math.sin(self.r), math.cos(self.r)]
         ])
         tr = p.new_tensor(list(img.size)) / 2
-        draw_kps(rimg, torch.matmul(p - tr, rot) + tr, "after.png")
-        import pdb; pdb.set_trace()
+        # draw_kps(rimg, torch.matmul(p - tr, rot) + tr, "after.png")
+        # import pdb; pdb.set_trace()
         return rimg, torch.matmul(p - tr, rot) + tr
 
 
