@@ -149,7 +149,7 @@ class GMDataset(Dataset):
                 nps = []
                 to_pil = transforms.ToPILImage()
                 r1 = HorizontalFlip(random.random() < 0.5)
-                r2 = Rotation(random.uniform(-0.2, 0.2)) if random.random() < 0.7 else lambda *x: x
+                r2 = Rotation(random.uniform(-0.15, 0.15)) if random.random() < 0.7 else lambda *x: x
                 for img, p in zip(imgs, ret_dict['Ps']):
                     img, p = r2(*r1(to_pil(img), p))
                     nimgs.append(img)

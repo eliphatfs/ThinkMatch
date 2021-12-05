@@ -15,7 +15,7 @@ class Rotation(torch.nn.Module):
 
     def forward(self, img: Image.Image, p):
         draw_kps(img, p, "before.png")
-        rimg = img.rotate(self.r, Image.BILINEAR)
+        rimg = img.rotate(math.degrees(self.r), Image.BILINEAR)
         rot = p.new_tensor([
             [math.cos(self.r), +math.sin(self.r)],
             [-math.sin(self.r), math.cos(self.r)]
