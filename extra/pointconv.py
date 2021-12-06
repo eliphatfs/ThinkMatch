@@ -390,7 +390,7 @@ class PointConvDensitySetAbstraction(nn.Module):
             new_xyz, new_points, grouped_xyz_norm, grouped_density = sample_and_group_all(xyz, points,
                                                                                           density_scale.view(B, N, 1))
         else:
-            new_xyz, new_points, grouped_xyz_norm, _, grouped_density = sample_and_group(self.npoint, self.nsample, xyz,
+            new_xyz, new_points, grouped_xyz_norm, _, grouped_density = sample_and_group(min(self.npoint, N), min(self.nsample, N), xyz,
                                                                                          points,
                                                                                          density_scale.view(B, N, 1))
         # new_xyz: sampled points position data, [B, npoint, C]
@@ -457,7 +457,7 @@ class PointConvDensityFeaturePropogation(nn.Module):
         # import ipdb; ipdb.set_trace()
         density_scale = self.densitynet(xyz1_density)
 
-        new_points, grouped_xyz_norm, grouped_density = group(self.nsample, xyz1, interpolated_points, density_scale.view(B, N, 1))
+        new_points, grouped_xyz_norm, grouped_density = group(min(self.nsample, N), xyz1, interpolated_points, density_scale.view(B, N, 1))
         # new_xyz: sampled points position data, [B, npoint, C]
         # new_points: sampled points data, [B, npoint, nsample, C+D]
         new_points = new_points.permute(0, 3, 2, 1)  # [B, C+D, nsample,npoint]
