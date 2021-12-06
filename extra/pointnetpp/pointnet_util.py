@@ -256,9 +256,9 @@ class PointNetSetAbstractionMsg(nn.Module):
             if points is not None:
                 grouped_points = index_points(points, group_idx)
                 grouped_points = torch.cat([grouped_points, grouped_xyz], dim=-1)
+                grouped_points[..., 0] = torch.atan2(grouped_xyz[..., 1], grouped_xyz[..., 0])
             else:
                 grouped_points = grouped_xyz
-            grouped_points[..., 0] = torch.atan2(grouped_xyz[..., 1], grouped_xyz[..., 0])
             # group_idx [B, S, K]
             # grouped_points = torch.cat([
             #     grouped_points,
