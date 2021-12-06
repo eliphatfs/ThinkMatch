@@ -453,6 +453,6 @@ class PointConv(nn.Module):
         l2_points = self.fp2(l2_xyz, l3_xyz, l2_points, l3_points)
         l1_points = self.fp3(l1_xyz, l2_xyz, l1_points, l2_points)
         g = g.repeat(1, 1, N)
-        l0_points = self.fp4(l0_xyz, l1_xyz, torch.cat([g, l0_points], 1), l1_points)
+        l0_points = self.fp4(l0_xyz, l1_xyz, torch.cat([g, xyz], 1), l1_points)
 
         return self.mlp(l0_points)
