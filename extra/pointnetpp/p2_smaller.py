@@ -63,13 +63,13 @@ class get_model(nn.Module):
         self.conv1 = nn.Conv1d(256, 32, 1)
         # self.cls_emb = nn.Embedding(len(labels), 32)
 
-    def forward(self, xyz, es, g):
+    def forward(self, xyz, g):
         # Set Abstraction layers
         B, C, N = xyz.shape
         l0_points = xyz
         l0_xyz = xyz[:, :3, :]
-        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, es)
-        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points, es)
+        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
+        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers
         l2_points = self.fp3(l2_xyz, l3_xyz, l2_points, l3_points)
