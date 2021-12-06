@@ -54,7 +54,8 @@ class HALOAttention(nn.Module):
 class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel, e_channel):
         super(get_model, self).__init__()
-        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[32, 64], [64, 128], [32, 64]])
+        self.sa1 = PointNetSetAbstractionMsg(36, [0.15, 0.3], [36] * 3, 3 + additional_channel, [[96, 192], [32, 64]])
+        self.sar = PointNetSetAbstractionMsg(36, [0.15, 0.3], [36] * 3, 256, [[96, 192], [32, 64]])
         self.sa2 = PointNetSetAbstractionMsg(36, [0.4, 1.0], [36] * 3, 256, [[144, 256], [48, 64]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=320 + 3, mlp=[256, 1024], group_all=True)
         self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 320, mlp=[1024, 512])
@@ -69,6 +70,8 @@ class get_model(nn.Module):
         l0_points = xyz
         l0_xyz = xyz[:, :3, :]
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
+        l1_xyz, l1_points = self.sar(l1_xyz, l1_points)
+        l1_xyz, l1_points = self.sar(l1_xyz, l1_points)
         l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers

@@ -63,7 +63,7 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
-        self.sconv = SiameseSConvOnNodes(64)
+        # self.sconv = SiameseSConvOnNodes(64)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.edge_proj = ResCls(2, feature_lat - 512, 1024, 32)
@@ -179,10 +179,10 @@ class Net(nn.Module):
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
-        G_src, G_tgt = data_dict['pyg_graphs']
-        G_src.x, G_tgt.x = batch_features(y_src, ns_src), batch_features(y_tgt, ns_tgt)
-        y_src = unbatch_features(y_src, self.sconv(G_src).x, ns_src)
-        y_tgt = unbatch_features(y_tgt, self.sconv(G_tgt).x, ns_tgt)
+        # G_src, G_tgt = data_dict['pyg_graphs']
+        # G_src.x, G_tgt.x = batch_features(y_src, ns_src), batch_features(y_tgt, ns_tgt)
+        # y_src = unbatch_features(y_src, self.sconv(G_src).x, ns_src)
+        # y_tgt = unbatch_features(y_tgt, self.sconv(G_tgt).x, ns_tgt)
 
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
