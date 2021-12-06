@@ -437,7 +437,7 @@ class PointConv(nn.Module):
         # self.fp1 = PointConvDensityFeaturePropogation(nsample=16, in_channel=512+3,  concat_channel=256, bandwidth=0.8, mlp=[512, 512])
         self.fp2 = PointConvDensityFeaturePropogation(nsample=16, in_channel=256+3, concat_channel=128, bandwidth=0.3, mlp=[256, 256])
         self.fp3 = PointConvDensityFeaturePropogation(nsample=16, in_channel=256+3, concat_channel=64, bandwidth=0.2, mlp=[256, 128])
-        self.fp4 = PointConvDensityFeaturePropogation(nsample=16, in_channel=128+3+g_channel+i_channel, concat_channel=3, bandwidth=0.1, mlp=[128, 64, 64])
+        self.fp4 = PointConvDensityFeaturePropogation(nsample=16, in_channel=128+3, concat_channel=3+g_channel+i_channel, bandwidth=0.1, mlp=[128, 64, 64])
 
         self.mlp = nn.Conv1d(64, 32, 1)
 
