@@ -6,6 +6,7 @@ from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
 from extra.pointnetpp import p2_smaller
+from extra.pointconv import PointConv
 from models.BBGM.sconv_archs import SiameseSConvOnNodes
 from src.loss_func import PermutationLoss
 
@@ -68,7 +69,7 @@ class Net(nn.Module):
         self.edge_proj = ResCls(2, feature_lat - 512, 1024, 32)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(64, 128, 32)
+        self.pn = PointConv(128, 64)  # p2_smaller.get_model(64, 128, 32)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -146,7 +147,7 @@ class Net(nn.Module):
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
-        P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
+        P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1]) * 3), 1)
         pcd = torch.cat((P_src, P_tgt), -1)
         y_cat = torch.cat((y_src, y_tgt), -1)
         # e_cat = torch.zeros([
