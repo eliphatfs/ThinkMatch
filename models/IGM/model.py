@@ -63,12 +63,12 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 48)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
-        self.edge_proj = ResCls(2, feature_lat - 512, 1024, 32)
+        # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(64, 128, 32)
+        self.pn = p2_smaller.get_model(48, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -118,19 +118,23 @@ class Net(nn.Module):
         ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
         return F_src, F_tgt, ghalo_src, ghalo_tgt
 
-    def edge_feats(self, feats, F, P, n):
+    def edge_activations(self, feats, F, P, n):
         # F: BCN
         # P: BN2
         # n: B
         ep = ((P.unsqueeze(-2) + P.unsqueeze(-3)) / 2).flatten(1, 2)  # B N^2 2
+        L = (
+            torch.cat([F, torch.zeros_like(F)], 1).unsqueeze(-1) +
+            torch.cat([torch.zeros_like(F), F], 1).unsqueeze(-2)
+        ).flatten(2)  # B2CN^2
         E = torch.cat([
             my_align(feat, ep, self.rescale) for feat in feats
         ], 1)  # BCN^2
-        # CE = torch.cat([E], 1)
+        CE = torch.cat([L, E], 1)
         mask = torch.arange(F.shape[-1], device=n.device).expand(len(F), F.shape[-1]) < n.unsqueeze(-1)
         # BN
         mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
-        return (self.edge_proj(E) * mask.flatten(1).unsqueeze(1)).reshape(F.shape[0], -1, F.shape[-1], F.shape[-1])
+        return (torch.sigmoid(self.edge_proj(CE)) * mask.flatten(1).unsqueeze(1)).reshape(-1, F.shape[-1], F.shape[-1])
     
     def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, g):
         resc = P_src.new_tensor(self.rescale)
@@ -149,12 +153,6 @@ class Net(nn.Module):
         P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
         pcd = torch.cat((P_src, P_tgt), -1)
         y_cat = torch.cat((y_src, y_tgt), -1)
-        # e_cat = torch.zeros([
-        #     e_src.shape[0], e_src.shape[1],
-        #     e_src.shape[2] + e_tgt.shape[2], e_src.shape[3] + e_tgt.shape[3]
-        # ], dtype=e_src.dtype, device=e_src.device)
-        # e_cat[..., :e_src.shape[2], :e_src.shape[3]] = F.normalize(e_src, dim=1)
-        # e_cat[..., e_src.shape[2]:, e_src.shape[3]:] = F.normalize(e_tgt, dim=1)
         return self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, g)[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
@@ -163,8 +161,6 @@ class Net(nn.Module):
         ns_src, ns_tgt = data_dict['ns']
 
         feat_srcs, feat_tgts = [], []
-        # self.resnet.eval()
-        # with torch.no_grad():
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
@@ -173,8 +169,8 @@ class Net(nn.Module):
             P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        # ea_src = self.edge_feats(feat_srcs, F_src, P_src, ns_src)
-        # ea_tgt = self.edge_feats(feat_tgts, F_tgt, P_tgt, ns_tgt)
+        # ea_src = self.edge_activations(feat_srcs, F_src, P_src, ns_src)
+        # ea_tgt = self.edge_activations(feat_tgts, F_tgt, P_tgt, ns_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
 

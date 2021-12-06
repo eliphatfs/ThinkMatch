@@ -84,7 +84,7 @@ def farthest_point_sample(xyz, npoint):
     return centroids
 
 
-def query_ball_point(radius, nsample, xyz, new_xyz, sqd):
+def query_ball_point(radius, nsample, xyz, new_xyz):
     """
     Input:
         radius: local region radius
@@ -98,9 +98,9 @@ def query_ball_point(radius, nsample, xyz, new_xyz, sqd):
     B, N, C = xyz.shape
     _, S, _ = new_xyz.shape
     group_idx = torch.arange(N, dtype=torch.long).to(device).view(1, 1, N).repeat([B, S, 1])
-    sqrdists = sqd
+    sqrdists = square_distance(new_xyz, xyz)
     group_idx[sqrdists > radius ** 2] = N
-    group_idx = group_idx.topk(nsample, dim=-1, largest=False)[0]
+    group_idx = group_idx.sort(dim=-1)[0][:, :, :nsample]
     group_first = group_idx[:, :, 0].view(B, S, 1).repeat([1, 1, nsample])
     mask = group_idx == N
     group_idx[mask] = group_first[mask]
@@ -125,8 +125,7 @@ def sample_and_group(npoint, radius, nsample, xyz, points, returnfps=False):
     torch.cuda.empty_cache()
     new_xyz = index_points(xyz, fps_idx)
     torch.cuda.empty_cache()
-    sqd = square_distance(new_xyz, xyz)
-    idx = query_ball_point(radius, nsample, xyz, new_xyz, sqd)
+    idx = query_ball_point(radius, nsample, xyz, new_xyz)
     torch.cuda.empty_cache()
     grouped_xyz = index_points(xyz, idx) # [B, npoint, nsample, C]
     torch.cuda.empty_cache()
@@ -232,7 +231,6 @@ class PointNetSetAbstractionMsg(nn.Module):
         Input:
             xyz: input points position data, [B, C, N]
             points: input points data, [B, D, N]
-            es: input edge data, [B, D, N, N]
         Return:
             new_xyz: sampled points position data, [B, C, S]
             new_points_concat: sample points feature data, [B, D', S]
@@ -245,10 +243,9 @@ class PointNetSetAbstractionMsg(nn.Module):
         S = min(N, self.npoint)
         new_xyz = index_points(xyz, farthest_point_sample(xyz, S))
         new_points_list = []
-        sqd = square_distance(new_xyz, xyz)
         for i, radius in enumerate(self.radius_list):
             K = min(S, self.nsample_list[i])
-            group_idx = query_ball_point(radius, K, xyz, new_xyz, sqd)
+            group_idx = query_ball_point(radius, K, xyz, new_xyz)
             grouped_xyz = index_points(xyz, group_idx)
             dst = torch.norm(grouped_xyz - new_xyz.view(B, S, 1, C), dim=-1)
             grouped_xyz -= new_xyz.view(B, S, 1, C)
@@ -256,19 +253,9 @@ class PointNetSetAbstractionMsg(nn.Module):
             if points is not None:
                 grouped_points = index_points(points, group_idx)
                 grouped_points = torch.cat([grouped_points, grouped_xyz], dim=-1)
-                grouped_points[..., 0] = torch.atan2(grouped_xyz[..., 1], grouped_xyz[..., 0])
             else:
                 grouped_points = grouped_xyz
-            # group_idx [B, S, K]
-            # grouped_points = torch.cat([
-            #     grouped_points,
-            #     es[
-            #         torch.arange(group_idx.shape[0], device=group_idx.device).reshape(-1, 1, 1),
-            #         :,
-            #         torch.arange(group_idx.shape[1], device=group_idx.device).reshape(1, -1, 1),
-            #         group_idx
-            #     ]
-            # ], dim=-1)
+
             grouped_points = grouped_points.permute(0, 3, 2, 1)  # [B, D, K, S]
             for j in range(len(self.conv_blocks[i])):
                 conv = self.conv_blocks[i][j]

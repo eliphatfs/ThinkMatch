@@ -9,6 +9,7 @@ from src.build_graphs import build_graphs
 from src.factorize_graph_matching import kronecker_sparse, kronecker_torch
 from src.sparse_torch import CSRMatrix3d
 from src.dataset import *
+
 from src.utils.config import cfg
 
 from itertools import combinations, product
@@ -143,13 +144,13 @@ class GMDataset(Dataset):
                 if not pnt:
                     # print("AUGMENT")
                     pnt = True
-                from extra.augmentations import HorizontalFlip, Rotation
+                from extra.augmentations import HorizontalFlip, AdjustSharpness, RandomPerspective, draw_kps
                 import uuid
                 nimgs = []
                 nps = []
                 to_pil = transforms.ToPILImage()
                 r1 = HorizontalFlip(random.random() < 0.5)
-                r2 = Rotation(random.uniform(-0.2, 0.2)) if random.random() < 0.8 else lambda *x: x
+                r2 = RandomPerspective()
                 for img, p in zip(imgs, ret_dict['Ps']):
                     img, p = r1(to_pil(img), p)
                     nimgs.append(img)

@@ -1,45 +1,11 @@
 import torch
 from PIL import Image, ImageEnhance
 import copy
-import math
 import numbers
 from collections.abc import Sequence
 from typing import Tuple, List
 from torchvision.transforms import functional as F
 
-
-class Rotation(torch.nn.Module):
-    def __init__(self, r):
-        super().__init__()
-        self.r = r
-
-    def forward(self, img: Image.Image, p):
-        # draw_kps(img, p, "before.png")
-        rimg = img.rotate(math.degrees(self.r), Image.BILINEAR)
-        rot = p.new_tensor([
-            [math.cos(self.r), -math.sin(self.r)],
-            [+math.sin(self.r), math.cos(self.r)]
-        ])
-        tr = p.new_tensor(list(img.size)) / 2
-        # draw_kps(rimg, torch.matmul(p - tr, rot) + tr, "after.png")
-        # import pdb; pdb.set_trace()
-        return rimg, torch.matmul(p - tr, rot) + tr
-
-
-class ImageTranspose(torch.nn.Module):
-    def __init__(self, t):
-        super().__init__()
-        self.t = t
-
-    def forward(self, img: Image.Image, p):
-        if self.t:
-            # draw_kps(img, p, "before.png")
-            img = img.transpose(Image.TRANSPOSE)
-            p = p.clone()
-            p[..., 0], p[..., 1] = p[..., 1], p[..., 0]
-            # draw_kps(img, p, "after.png")
-            # import pdb; pdb.set_trace()
-        return img, p
 
 class HorizontalFlip(torch.nn.Module):
     def __init__(self, flip):
