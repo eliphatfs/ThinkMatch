@@ -187,8 +187,8 @@ class Net(nn.Module):
 
         sim = torch.einsum(
             'bci,bcj->bij',
-            F.normalize(folding_src, 1),
-            F.normalize(folding_tgt, 1)
+            folding_src,
+            folding_tgt
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
