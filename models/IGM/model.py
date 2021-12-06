@@ -135,25 +135,17 @@ class Net(nn.Module):
         # BN
         mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
         return (torch.sigmoid(self.edge_proj(CE)) * mask.flatten(1).unsqueeze(1)).reshape(-1, F.shape[-1], F.shape[-1])
-    
-    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, g):
+
+    def points(self, y_src, P_src, n_src, cls, g):
         resc = P_src.new_tensor(self.rescale)
-        P_src, P_tgt = P_src / resc, P_tgt / resc
-        # P_src = (P_src - P_src.min(1, keepdim=True)[0]) / (P_src.max(1, keepdim=True)[0] - P_src.min(1, keepdim=True)[0] + 1e-6)
-        # P_tgt = (P_tgt - P_tgt.min(1, keepdim=True)[0]) / (P_tgt.max(1, keepdim=True)[0] - P_tgt.min(1, keepdim=True)[0] + 1e-6)
-        P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
-        
+        P_src = P_src / resc
+        P_src = P_src.transpose(1, 2)
         if self.training:
-            P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
-            P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
+            P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.2 - 0.1
+        # P_src = (P_src - P_src.min(-1, keepdim=True)[0]) / (P_src.max(-1, keepdim=True)[0] - P_src.min(-1, keepdim=True)[0] + 1e-7)
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
-        key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
-        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
-        P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
-        pcd = torch.cat((P_src, P_tgt), -1)
-        y_cat = torch.cat((y_src, y_tgt), -1)
-        return self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, g)[..., :y_src.shape[-1]]
+        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls, g)[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -177,9 +169,8 @@ class Net(nn.Module):
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
-        
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
+        folding_src = self.points(y_src, P_src, ns_src, data_dict['cls'][0], g_src)
+        folding_tgt = self.points(y_tgt, P_tgt, ns_tgt, data_dict['cls'][1], g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',

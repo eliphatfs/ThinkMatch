@@ -65,7 +65,7 @@ TRAIN:
 
 # Evaluation settings
 EVAL:
-  EPOCH: 24  # epoch to be tested
+  EPOCH: 30  # epoch to be tested
   SAMPLES: 1000  # number of tested pairs for each class
 
 # model parameters
