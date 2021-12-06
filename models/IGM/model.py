@@ -63,12 +63,12 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = nn.Conv1d(feature_lat, 128, 1)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.edge_proj = ResCls(2, feature_lat - 512, 1024, 32)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(128, 128, 32)
+        self.pn = p2_smaller.get_model(64, 128, 32)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -163,11 +163,11 @@ class Net(nn.Module):
         ns_src, ns_tgt = data_dict['ns']
 
         feat_srcs, feat_tgts = [], []
-        self.resnet.eval()
-        with torch.no_grad():
-            for feat in self.encode(torch.cat([src, tgt])):
-                feat_srcs.append(feat[:len(src)])
-                feat_tgts.append(feat[len(src):])
+        # self.resnet.eval()
+        # with torch.no_grad():
+        for feat in self.encode(torch.cat([src, tgt])):
+            feat_srcs.append(feat[:len(src)])
+            feat_tgts.append(feat[len(src):])
         if self.training:
             P_src = P_src + torch.rand_like(P_src) * 2 - 1
             P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1

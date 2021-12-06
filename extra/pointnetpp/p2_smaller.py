@@ -54,10 +54,10 @@ class HALOAttention(nn.Module):
 class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel, e_channel):
         super(get_model, self).__init__()
-        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[64], [128], [64]])
-        self.sa2 = PointNetSetAbstractionMsg(36, [0.4, 1.0], [36] * 3, 256, [[256], [64]])
-        self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=320 + 3, mlp=[1024], group_all=True)
-        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 320, mlp=[512])
+        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[64, 64], [128, 128], [64, 64]])
+        self.sa2 = PointNetSetAbstractionMsg(36, [0.4, 1.0], [36] * 3, 256, [[144, 256], [48, 64]])
+        self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=320 + 3, mlp=[256, 1024], group_all=True)
+        self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 320, mlp=[1024, 512])
         self.fp2 = PointNetFeaturePropagation(in_channel=512 + 256, mlp=[384])
         self.fp1 = PointNetFeaturePropagation(in_channel=384 + 6 + 32 * 0 + g_channel + additional_channel, mlp=[256])
         self.conv1 = nn.Conv1d(256, 32, 1)
