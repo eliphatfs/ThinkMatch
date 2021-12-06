@@ -253,8 +253,7 @@ class PointNetSetAbstractionMsg(nn.Module):
             dst = torch.norm(grouped_xyz - new_xyz.view(B, S, 1, C), dim=-1)
             grouped_xyz -= new_xyz.view(B, S, 1, C)
             grouped_xyz[..., 2] = dst
-            if grouped_xyz.shape[-1] > 3:
-                grouped_xyz[..., 3] = torch.atan2(grouped_xyz[..., 1], grouped_xyz[..., 0])
+            grouped_points[..., 0] = torch.atan2(grouped_xyz[..., 1], grouped_xyz[..., 0])
             if points is not None:
                 grouped_points = index_points(points, group_idx)
                 grouped_points = torch.cat([grouped_points, grouped_xyz], dim=-1)
