@@ -63,7 +63,7 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = nn.Linear(feature_lat, 128)
+        self.pix2pt_proj = nn.Conv1d(feature_lat, 128)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.edge_proj = ResCls(2, feature_lat - 512, 1024, 32)
         self.tau = cfg.IGM.SK_TAU
