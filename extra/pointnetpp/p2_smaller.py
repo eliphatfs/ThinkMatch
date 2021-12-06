@@ -54,7 +54,7 @@ class HALOAttention(nn.Module):
 class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel, e_channel):
         super(get_model, self).__init__()
-        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[64, 64], [128, 128], [64, 64]])
+        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[32, 64], [64, 128], [32, 64]])
         self.sa2 = PointNetSetAbstractionMsg(36, [0.4, 1.0], [36] * 3, 256, [[144, 256], [48, 64]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=320 + 3, mlp=[256, 1024], group_all=True)
         self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 320, mlp=[1024, 512])
