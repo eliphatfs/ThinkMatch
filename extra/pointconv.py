@@ -499,7 +499,7 @@ class PointConv(nn.Module):
 
     def forward(self, xyz, g):
         _, _, N = xyz.shape
-        l0_xyz, l0_points = xyz[:, :3], xyz
+        l0_xyz, l0_points = xyz[:, :3], xyz[:, 3:]
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
         l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
