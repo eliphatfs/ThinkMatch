@@ -167,7 +167,6 @@ class Net(nn.Module):
         imp_src = self.pix2imp_proj(F_src).reshape(len(P_src), 1, -1).repeat(1, 32, 1)
         imp_tgt = self.pix2imp_proj(F_tgt).reshape(len(P_tgt), 1, -1).repeat(1, 32, 1)
         samp_src = F.gumbel_softmax(imp_src, hard=True).bmm(grid)
-        print(samp_src[0])
         samp_tgt = F.gumbel_softmax(imp_tgt, hard=True).bmm(grid)
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, samp_src, samp_tgt)
 

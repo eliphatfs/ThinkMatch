@@ -24,12 +24,12 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
-        l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
-        l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
+        # l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
+        # l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
+        # l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers
         g = g.repeat(1, 1, tp.shape[-1])
-        l0_points = self.fp(tp, l3_xyz, g, l3_points)
+        l0_points = self.fp(tp, l0_xyz, g, l0_points)
         # FC layers
         x = self.conv(l0_points)
         return x
