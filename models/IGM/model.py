@@ -158,6 +158,8 @@ class Net(nn.Module):
         grid = torch.stack(torch.meshgrid([torch.linspace(0, 1, 50)] * 2), -1).to(P_src).reshape(1, -1, 2)
         grid = grid.repeat(len(P_src), 1, 1)
         grid = grid + torch.randn_like(grid) * 0.002
+        resc = P_src.new_tensor(self.rescale)
+        grid = grid * resc
 
         feat_srcs, feat_tgts = [], []
         for feat in self.encode(torch.cat([src, tgt])):
