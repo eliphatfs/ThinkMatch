@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
-from extra.pointnetpp import p2_smaller
+from extra.pointnetpp import p2_manifold
 from models.BBGM.sconv_archs import SiameseSConvOnNodes
 from src.loss_func import PermutationLoss
 
@@ -69,7 +69,7 @@ class Net(nn.Module):
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(48, 128)
+        self.pn = p2_manifold.get_model(256, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -137,15 +137,15 @@ class Net(nn.Module):
         mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
         return (torch.sigmoid(self.edge_proj(CE)) * mask.flatten(1).unsqueeze(1)).reshape(-1, F.shape[-1], F.shape[-1])
 
-    def points(self, y_src, P_src, n_src, cls, g):
+    def points(self, y_src, P_src, TP_src, g):
         resc = P_src.new_tensor(self.rescale)
         P_src = P_src / resc
         P_src = P_src.transpose(1, 2)
         if self.training:
             P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.2 - 0.1
-        key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
-        return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls, g)[..., :y_src.shape[-1]]
+        TP_src = torch.cat((TP_src, torch.zeros_like(TP_src[:, :1])), 1)
+        return self.pn(torch.cat((P_src, y_src), 1), g, TP_src)
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -161,8 +161,8 @@ class Net(nn.Module):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, grid, grid)
-        imp_src = self.pix2imp_proj(F_src).reshape(len(P_src), 1, -1).repeat(1, 32, -1)
-        imp_tgt = self.pix2imp_proj(F_tgt).reshape(len(P_tgt), 1, -1).repeat(1, 32, -1)
+        imp_src = self.pix2imp_proj(F_src).reshape(len(P_src), 1, -1).repeat(1, 32, 1)
+        imp_tgt = self.pix2imp_proj(F_tgt).reshape(len(P_tgt), 1, -1).repeat(1, 32, 1)
         samp_src = F.gumbel_softmax(imp_src, hard=True).bmm(grid)
         samp_tgt = F.gumbel_softmax(imp_tgt, hard=True).bmm(grid)
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, samp_src, samp_tgt)
@@ -172,8 +172,8 @@ class Net(nn.Module):
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
-        folding_src = self.points(y_src, P_src, ns_src, data_dict['cls'][0], g_src)
-        folding_tgt = self.points(y_tgt, P_tgt, ns_tgt, data_dict['cls'][1], g_tgt)
+        folding_src = self.points(y_src, samp_src, P_src, g_src)
+        folding_tgt = self.points(y_tgt, samp_tgt, P_tgt, g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
