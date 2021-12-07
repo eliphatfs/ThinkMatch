@@ -136,8 +136,8 @@ class Net(nn.Module):
         grid = grid.repeat(len(g), 1, 1)
         grid = grid + torch.randn_like(grid) * 0.01
         g = g.repeat(1, 1, grid.shape[-1])
-        f1 = grid + self.fold_1(torch.cat([g, grid], 1))
-        f2 = torch.cat([grid, torch.ones_like(grid[:, :1])], 1) + self.fold_2(torch.cat([g, f1], 1))
+        f1 = self.fold_1(torch.cat([g, grid], 1))
+        f2 = torch.cat([grid, torch.ones_like(grid[:, :1])], 1) + self.fold_2(torch.cat([g, f1], 1)) * 0.2
         return f2.transpose(1, 2)
 
     def forward(self, data_dict, **kwargs):
