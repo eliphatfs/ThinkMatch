@@ -163,8 +163,8 @@ class Net(nn.Module):
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
-        folding_src = self.points(y_src, samp_src, P_src, g_src)
-        folding_tgt = self.points(y_tgt, samp_tgt, P_tgt, g_tgt)
+        folding_src = self.points(y_src, gf_src, P_src, g_src)
+        folding_tgt = self.points(y_tgt, gf_tgt, P_tgt, g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
