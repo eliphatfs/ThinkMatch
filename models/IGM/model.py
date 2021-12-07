@@ -153,6 +153,7 @@ class Net(nn.Module):
         
         resc = P_src.new_tensor(self.rescale)
         gf_src, gf_tgt = self.fold(g_src), self.fold(g_tgt)
+        print(gf_src.transpose(1, 2))
         samp_src = gf_src[..., :2] * resc
         samp_tgt = gf_tgt[..., :2] * resc
 
