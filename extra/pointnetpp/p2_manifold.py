@@ -12,7 +12,7 @@ class get_model(nn.Module):
         self.sa2 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 512, [[64, 128], [128, 256], [64, 128]])
         self.sa3 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 512, [[64, 128], [128, 256], [64, 128]])
         # self.sa4 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 64 + 48 + 3, mlp=[300, 1024], group_all=True)
-        self.fp = PointNetFeaturePropagation(in_channel=1024 + g_channel, mlp=[512, 256])
+        self.fp = PointNetFeaturePropagation(in_channel=512 + g_channel, mlp=[512, 256])
         self.conv = nn.Conv1d(256, 32, 1)
 
     def forward(self, xyz, g, tp):
