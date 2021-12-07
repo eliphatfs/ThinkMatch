@@ -63,7 +63,8 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 48)
+        self.pix2imp_proj = ResCls(2, feature_lat, 512, 1)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
@@ -142,7 +143,6 @@ class Net(nn.Module):
         P_src = P_src.transpose(1, 2)
         if self.training:
             P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.2 - 0.1
-        # P_src = (P_src - P_src.min(-1, keepdim=True)[0]) / (P_src.max(-1, keepdim=True)[0] - P_src.min(-1, keepdim=True)[0] + 1e-7)
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         return self.pn(torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1), cls, g)[..., :y_src.shape[-1]]
@@ -151,18 +151,21 @@ class Net(nn.Module):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
+        
+        grid = torch.stack(torch.meshgrid([torch.linspace(0, 1, 50)] * 2), -1).to(P_src).reshape(1, -1, 2)
+        grid = grid.repeat(len(P_src), 1, 1)
+        grid = grid + torch.randn_like(grid) * 0.002
 
         feat_srcs, feat_tgts = [], []
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
-        if self.training:
-            P_src = P_src + torch.rand_like(P_src) * 2 - 1
-            P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1
-        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
-
-        # ea_src = self.edge_activations(feat_srcs, F_src, P_src, ns_src)
-        # ea_tgt = self.edge_activations(feat_tgts, F_tgt, P_tgt, ns_tgt)
+        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, grid, grid)
+        imp_src = self.pix2imp_proj(F_src).reshape(len(P_src), 1, -1).repeat(1, 32, -1)
+        imp_tgt = self.pix2imp_proj(F_tgt).reshape(len(P_tgt), 1, -1).repeat(1, 32, -1)
+        samp_src = F.gumbel_softmax(imp_src, hard=True).bmm(grid)
+        samp_tgt = F.gumbel_softmax(imp_tgt, hard=True).bmm(grid)
+        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, samp_src, samp_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
 
