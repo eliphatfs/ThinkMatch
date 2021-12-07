@@ -241,7 +241,7 @@ class PointNetSetAbstractionMsg(nn.Module):
 
         B, N, C = xyz.shape
         S = min(N, self.npoint)
-        new_xyz = index_points(xyz, farthest_point_sample(xyz, S))
+        new_xyz = xyz  # index_points(xyz, farthest_point_sample(xyz, S))
         new_points_list = []
         for i, radius in enumerate(self.radius_list):
             K = min(S, self.nsample_list[i])
