@@ -138,8 +138,7 @@ class Net(nn.Module):
         g = g.repeat(1, 1, grid.shape[-1])
         f1 = self.fold_1(torch.cat([g, grid], 1))
         f2 = self.fold_2(torch.cat([g, f1], 1))
-        return f2
-
+        return f2.transpose(1, 2)
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
