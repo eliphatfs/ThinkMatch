@@ -63,9 +63,10 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2imp_proj = ResCls(2, feature_lat, 512, 1)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
+        self.pix2pt_proj = ResCls(1, feature_lat, 784, 256)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
+        self.fold_1 = ResCls(1, 512 * 2 + 2, 512, 2)
+        self.fold_2 = ResCls(1, 512 * 2 + 2, 512, 3)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
@@ -119,57 +120,43 @@ class Net(nn.Module):
         ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
         return F_src, F_tgt, ghalo_src, ghalo_tgt
 
-    def edge_activations(self, feats, F, P, n):
-        # F: BCN
-        # P: BN2
-        # n: B
-        ep = ((P.unsqueeze(-2) + P.unsqueeze(-3)) / 2).flatten(1, 2)  # B N^2 2
-        L = (
-            torch.cat([F, torch.zeros_like(F)], 1).unsqueeze(-1) +
-            torch.cat([torch.zeros_like(F), F], 1).unsqueeze(-2)
-        ).flatten(2)  # B2CN^2
-        E = torch.cat([
-            my_align(feat, ep, self.rescale) for feat in feats
-        ], 1)  # BCN^2
-        CE = torch.cat([L, E], 1)
-        mask = torch.arange(F.shape[-1], device=n.device).expand(len(F), F.shape[-1]) < n.unsqueeze(-1)
-        # BN
-        mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
-        return (torch.sigmoid(self.edge_proj(CE)) * mask.flatten(1).unsqueeze(1)).reshape(-1, F.shape[-1], F.shape[-1])
-
     def points(self, y_src, P_src, TP_src, g):
         resc = P_src.new_tensor(self.rescale)
-        P_src = P_src / resc
         TP_src = TP_src / resc
         P_src = P_src.transpose(1, 2)
         TP_src = TP_src.transpose(1, 2)
         if self.training:
             P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.2 - 0.1
             TP_src = TP_src + torch.rand_like(TP_src[..., :1]) * 0.2 - 0.1
-        P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         TP_src = torch.cat((TP_src, torch.zeros_like(TP_src[:, :1])), 1)
         return self.pn(torch.cat((P_src, y_src), 1), g, TP_src)
+
+    def fold(self, g):
+        grid = torch.stack(torch.meshgrid([torch.linspace(0, 1, 6)] * 2), 0).to(g).reshape(1, 2, -1)
+        grid = grid.repeat(len(g), 1, 1)
+        grid = grid + torch.randn_like(grid) * 0.01
+        g = g.repeat(1, 1, grid.shape[-1])
+        f1 = self.fold_1(torch.cat([g, grid], 1))
+        f2 = self.fold_2(torch.cat([g, f1], 1))
+        return f2
+
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
-        
-        grid = torch.stack(torch.meshgrid([torch.linspace(0, 1, 50)] * 2), -1).to(P_src).reshape(1, -1, 2)
-        grid = grid.repeat(len(P_src), 1, 1)
-        grid = grid + torch.randn_like(grid) * 0.002
-        resc = P_src.new_tensor(self.rescale)
-        grid = grid * resc
 
         feat_srcs, feat_tgts = [], []
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
-        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, grid, grid)
-        imp_src = self.pix2imp_proj(F_src).reshape(len(P_src), 1, -1).repeat(1, 32, 1)
-        imp_tgt = self.pix2imp_proj(F_tgt).reshape(len(P_tgt), 1, -1).repeat(1, 32, 1)
-        samp_src = F.gumbel_softmax(imp_src, hard=True).bmm(grid)
-        samp_tgt = F.gumbel_softmax(imp_tgt, hard=True).bmm(grid)
+        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
+        
+        resc = P_src.new_tensor(self.rescale)
+        gf_src, gf_tgt = self.fold(g_src), self.fold(g_tgt)
+        samp_src = gf_src[..., :2] * resc
+        samp_tgt = gf_tgt[..., :2] * resc
+
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, samp_src, samp_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
