@@ -136,8 +136,8 @@ class Net(nn.Module):
         grid = grid.repeat(len(g), 1, 1)
         grid = grid + torch.randn_like(grid) * 0.01
         g = g.repeat(1, 1, grid.shape[-1])
-        f1 = self.fold_1(torch.cat([g, grid], 1))
-        f2 = self.fold_2(torch.cat([g, f1], 1))
+        f1 = grid + self.fold_1(torch.cat([g, grid], 1))
+        f2 = torch.cat([grid, torch.ones_like(grid[:, :1])], 1) + self.fold_2(torch.cat([g, f1], 1))
         return f2.transpose(1, 2)
 
     def forward(self, data_dict, **kwargs):
@@ -153,7 +153,8 @@ class Net(nn.Module):
         
         resc = P_src.new_tensor(self.rescale)
         gf_src, gf_tgt = self.fold(g_src), self.fold(g_tgt)
-        print(gf_src.transpose(1, 2))
+        if torch.rand([]) < 0.01:
+            print(gf_src[0].transpose(1, 2))
         samp_src = gf_src[..., :2] * resc
         samp_tgt = gf_tgt[..., :2] * resc
 
