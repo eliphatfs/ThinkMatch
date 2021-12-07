@@ -154,7 +154,7 @@ class Net(nn.Module):
         resc = P_src.new_tensor(self.rescale)
         gf_src, gf_tgt = self.fold(g_src), self.fold(g_tgt)
         if torch.rand([]) < 0.01:
-            print(gf_src[0].transpose(1, 2))
+            print(gf_src[0].t())
         samp_src = gf_src[..., :2] * resc
         samp_tgt = gf_tgt[..., :2] * resc
 
