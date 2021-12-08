@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from src.utils.config import cfg
 from src.lap_solvers.hungarian import hungarian
 from src.lap_solvers.sinkhorn import Sinkhorn
-from extra.pointnetpp import p2_manifold
+from extra.pointnetpp import p2_smaller
 from models.BBGM.sconv_archs import SiameseSConvOnNodes
 from src.loss_func import PermutationLoss
 
@@ -63,14 +63,12 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = ResCls(1, feature_lat, 784, 256)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 48)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
-        self.fold_1 = ResCls(1, 512 * 2 + 2, 512, 2)
-        self.fold_2 = ResCls(1, 512 * 2 + 2, 512, 3)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_manifold.get_model(256, 128)
+        self.pn = p2_smaller.get_model(48, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -120,25 +118,39 @@ class Net(nn.Module):
         ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
         return F_src, F_tgt, ghalo_src, ghalo_tgt
 
-    def points(self, y_src, P_src, TP_src, g):
+    def edge_activations(self, feats, F, P, n):
+        # F: BCN
+        # P: BN2
+        # n: B
+        ep = ((P.unsqueeze(-2) + P.unsqueeze(-3)) / 2).flatten(1, 2)  # B N^2 2
+        L = (
+            torch.cat([F, torch.zeros_like(F)], 1).unsqueeze(-1) +
+            torch.cat([torch.zeros_like(F), F], 1).unsqueeze(-2)
+        ).flatten(2)  # B2CN^2
+        E = torch.cat([
+            my_align(feat, ep, self.rescale) for feat in feats
+        ], 1)  # BCN^2
+        CE = torch.cat([L, E], 1)
+        mask = torch.arange(F.shape[-1], device=n.device).expand(len(F), F.shape[-1]) < n.unsqueeze(-1)
+        # BN
+        mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
+        return (torch.sigmoid(self.edge_proj(CE)) * mask.flatten(1).unsqueeze(1)).reshape(-1, F.shape[-1], F.shape[-1])
+    
+    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, g):
         resc = P_src.new_tensor(self.rescale)
-        TP_src = TP_src / resc
-        P_src = P_src.transpose(1, 2)
-        TP_src = TP_src.transpose(1, 2)
+        P_src, P_tgt = P_src / resc, P_tgt / resc
+        P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
         if self.training:
-            P_src = P_src + torch.rand_like(P_src[..., :1]) * 0.2 - 0.1
-            TP_src = TP_src + torch.rand_like(TP_src[..., :1]) * 0.2 - 0.1
-        TP_src = torch.cat((TP_src, torch.zeros_like(TP_src[:, :1])), 1)
-        return self.pn(torch.cat((P_src, y_src), 1), g, TP_src)
-
-    def fold(self, g):
-        grid = torch.stack(torch.meshgrid([torch.linspace(0, 1, 6)] * 2), 0).to(g).reshape(1, 2, -1)
-        grid = grid.repeat(len(g), 1, 1)
-        grid = grid + torch.randn_like(grid) * 0.01
-        g = g.repeat(1, 1, grid.shape[-1])
-        f1 = self.fold_1(torch.cat([g, grid], 1))
-        f2 = torch.cat([grid, torch.ones_like(grid[:, :1])], 1) + self.fold_2(torch.cat([g, f1], 1)) * 0.2
-        return f2.transpose(1, 2)
+            P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
+            P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
+        key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
+        key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
+        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
+        P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
+        P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
+        pcd = torch.cat((P_src, P_tgt), -1)
+        y_cat = torch.cat((y_src, y_tgt), -1)
+        return self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, g)[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -149,24 +161,22 @@ class Net(nn.Module):
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
+        if self.training:
+            P_src = P_src + torch.rand_like(P_src) * 2 - 1
+            P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
-        
-        resc = P_src.new_tensor(self.rescale)
-        gf_src, gf_tgt = self.fold(g_src), self.fold(g_tgt)
-        if torch.rand([]) < 0.01:
-            print(gf_src[0].t())
-        samp_src = gf_src[..., :2] * resc
-        samp_tgt = gf_tgt[..., :2] * resc
 
-        F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, samp_src, samp_tgt)
+        # ea_src = self.edge_activations(feat_srcs, F_src, P_src, ns_src)
+        # ea_tgt = self.edge_activations(feat_tgts, F_tgt, P_tgt, ns_tgt)
 
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
 
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
-        folding_src = self.points(y_src, gf_src, P_src, g_src)
-        folding_tgt = self.points(y_tgt, gf_tgt, P_tgt, g_tgt)
+        
+        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
+        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
