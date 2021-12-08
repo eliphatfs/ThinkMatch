@@ -65,14 +65,10 @@ class Net(torch.nn.Module):
         super(Net, self).__init__()
         
         self.resnet = resnet34(True)  # UNet(3, 2)
-        # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 96)
         self.pix2cl_proj = ResCls(1, 1024, 512, 96)
-        # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
-        self.tau = cfg.IGM.SK_TAU
-        self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(96, 96, 256)
         
         self.backbone_params = list(self.resnet.parameters())
