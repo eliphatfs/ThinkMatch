@@ -67,17 +67,17 @@ class Net(torch.nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 96)
-        self.pix2cl_proj = ResCls(1, 1024, 512, 128)
-        self.pn = p2_smaller.get_model(96, 128, 192)
+        self.pix2pt_proj = ResCls(0, feature_lat, 1024, 384)
+        self.pix2cl_proj = ResCls(0, 1024, 512, 512)
+        # self.pn = p2_smaller.get_model(96, 128, 192)
         
         self.backbone_params = list(self.resnet.parameters())
 
-        self.message_pass_node_features = SiameseSConvOnNodes(input_node_dim=192)
+        self.message_pass_node_features = SiameseSConvOnNodes(input_node_dim=384)
         self.build_edge_features_from_node_features = SiameseNodeFeaturesToEdgeFeatures(
             total_num_nodes=self.message_pass_node_features.num_node_features
         )
-        self.global_state_dim = 256
+        self.global_state_dim = 1024
         self.vertex_affinity = InnerProductWithWeightsAffinity(
             self.global_state_dim, self.message_pass_node_features.num_node_features)
         self.edge_affinity = InnerProductWithWeightsAffinity(
@@ -202,12 +202,12 @@ class Net(torch.nn.Module):
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
         
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
+        # folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
+        # folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
 
         global_list = [g_src.flatten(1), g_tgt.flatten(1)]
         orig_graph_list = []
-        for feat, graph, np in zip([folding_src, folding_tgt], graphs, n_points):
+        for feat, graph, np in zip([y_src, y_tgt], graphs, n_points):
             graph.x = concat_features(feat, np)
             graph = self.message_pass_node_features(graph)
             orig_graph = self.build_edge_features_from_node_features(graph)
