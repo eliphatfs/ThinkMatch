@@ -62,7 +62,7 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = VGG16_bn_final()  # resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        feature_lat = 512 * 3
+        feature_lat = 512 * 4
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 56)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
