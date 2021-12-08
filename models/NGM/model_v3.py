@@ -68,16 +68,16 @@ class Net(torch.nn.Module):
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
         # self.sconv = SiameseSConvOnNodes(48)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 96)
-        self.pix2cl_proj = ResCls(1, 1024, 512, 96)
-        self.pn = p2_smaller.get_model(96, 96, 256)
+        self.pix2cl_proj = ResCls(1, 1024, 512, 128)
+        self.pn = p2_smaller.get_model(96, 128, 256)
         
         self.backbone_params = list(self.resnet.parameters())
 
-        self.message_pass_node_features = SiameseSConvOnNodes(input_node_dim=cfg.NGM.FEATURE_CHANNEL * 2)
+        self.message_pass_node_features = SiameseSConvOnNodes(input_node_dim=cfg.NGM.FEATURE_CHANNEL)
         self.build_edge_features_from_node_features = SiameseNodeFeaturesToEdgeFeatures(
             total_num_nodes=self.message_pass_node_features.num_node_features
         )
-        self.global_state_dim = cfg.NGM.FEATURE_CHANNEL * 2
+        self.global_state_dim = 256
         self.vertex_affinity = InnerProductWithWeightsAffinity(
             self.global_state_dim, self.message_pass_node_features.num_node_features)
         self.edge_affinity = InnerProductWithWeightsAffinity(
