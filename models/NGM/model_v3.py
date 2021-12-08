@@ -207,8 +207,8 @@ class Net(torch.nn.Module):
 
         global_list = [g_src.flatten(1), g_tgt.flatten(1)]
         orig_graph_list = []
-        for feat, graph in zip([folding_src, folding_tgt], graphs):
-            graph.x = feat.transpose(1, 2)
+        for feat, graph, np in zip([folding_src, folding_tgt], graphs, n_points):
+            graph.x = concat_features(feat, np)
             graph = self.message_pass_node_features(graph)
             orig_graph = self.build_edge_features_from_node_features(graph)
             orig_graph_list.append(orig_graph)
