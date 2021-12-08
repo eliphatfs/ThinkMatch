@@ -38,7 +38,7 @@ GRAPH:
 TRAIN:
   # start, end epochs
   START_EPOCH: 0
-  NUM_EPOCHS: 20
+  NUM_EPOCHS: 30
 
   LOSS_FUNC: perm
 
@@ -57,7 +57,7 @@ TRAIN:
     - 8
     - 10
 
-  EPOCH_ITERS: 2000  # iterations per epoch
+  EPOCH_ITERS: 1000  # iterations per epoch
 
   CLASS: none
 
