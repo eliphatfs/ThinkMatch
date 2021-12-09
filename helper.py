@@ -139,7 +139,7 @@ def self_ensemble():
     path_fmt = "output/igm_voc/params/params_%04d.pt"
     for i in range(1, 25):
         states.append(torch.load(path_fmt % i))
-    torch.save(divide_state_dict(merge_state_dicts(states), 10), path_fmt % 9999)
+    torch.save(divide_state_dict(merge_state_dicts(states), len(states)), path_fmt % 9999)
 
 
 if __name__ == "__main__":
