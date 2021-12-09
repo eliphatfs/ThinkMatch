@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 import xlwt
-import tqdm
 
 from src.dataset.data_loader import GMDataset, get_dataloader
 from src.evaluation_metric import *
@@ -13,53 +12,9 @@ from src.utils.timer import Timer
 
 from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
-import numpy
-
-dataloaders = []
-
-
-def vis(data_dict):
-    d = lambda x: x.detach().cpu().numpy()
-    from PIL import ImageDraw, Image
-    import uuid
-    iss, its = data_dict['images']
-    kss, kts = data_dict['Ps']
-    for src, tgt, perm, gt, ks, kt in zip(
-        iss, its,
-        data_dict['perm_mat'], data_dict['gt_perm_mat'],
-        kss, kts
-    ):
-        src, tgt = d(src), d(tgt)
-        perm, gt = d(perm), d(gt)
-        ks, kt = d(ks), d(kt)
-        c = numpy.concatenate([src, tgt], -1).transpose(1, 2, 0)
-        c = (c - c.min()) / (c.max() - c.min()) * 254
-        img = Image.fromarray(c.astype(numpy.uint8))
-        draw = ImageDraw.Draw(img)
-        for i in range(perm.shape[0]):
-            for j in range(perm.shape[1]):
-                if perm[i, j] > 0.5:
-                    cor = gt[i, j] > 0.5
-                    draw.line([tuple(map(int, ks[i])), tuple(map(int, kt[j] + [256, 0]))], 'green' if cor else 'red', 2)
-        img.save("pred_vis/%s.png" % str(uuid.uuid4()))
-
-
-def cache(classes, bm):
-    dataloaders.clear()
-    for cls in (classes):
-        image_dataset = GMDataset(name=cfg.DATASET_FULL_NAME,
-                                    bm=bm,
-                                    problem=cfg.PROBLEM.TYPE,
-                                    length=cfg.EVAL.SAMPLES,
-                                    cls=cls,
-                                    using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
-        torch.manual_seed(cfg.RANDOM_SEED)
-        dataloader = get_dataloader(image_dataset, fix_seed=True, shuffle=True, batch_size=32)
-        dataloaders.append(dataloader)
 
 
 def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=None):
-    cache(classes, bm)
     print('Start evaluation...')
     since = time.time()
 
@@ -67,6 +22,19 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
 
     was_training = model.training
     model.eval()
+
+    dataloaders = []
+
+    for cls in classes:
+        image_dataset = GMDataset(name=cfg.DATASET_FULL_NAME,
+                                  bm=bm,
+                                  problem=cfg.PROBLEM.TYPE,
+                                  length=cfg.EVAL.SAMPLES,
+                                  cls=cls,
+                                  using_all_graphs=cfg.PROBLEM.TEST_ALL_GRAPHS)
+        torch.manual_seed(cfg.RANDOM_SEED)
+        dataloader = get_dataloader(image_dataset, shuffle=True)
+        dataloaders.append(dataloader)
 
     recalls = []
     precisions = []
@@ -83,7 +51,8 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
     prediction = []
 
     for i, cls in enumerate(classes):
-        print('Evaluating class {}: {}/{}'.format(cls, i, len(classes)))
+        if verbose:
+            print('Evaluating class {}: {}/{}'.format(cls, i, len(classes)))
 
         running_since = time.time()
         iter_num = 0
@@ -94,6 +63,7 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
         cluster_purity_list = []
         cluster_ri_list = []
         prediction_cls = []
+
         for inputs in dataloaders[i]:
             if iter_num >= cfg.EVAL.SAMPLES / inputs['batch_size']:
                 break
@@ -123,7 +93,6 @@ def eval_model(model, classes, bm, last_epoch=True, verbose=False, xls_sheet=Non
                     eval_dict['perm_mat'] = perm_mat
                     prediction.append(eval_dict)
                     prediction_cls.append(eval_dict)
-                # vis(outputs)
 
                 if 'aff_mat' in outputs:
                     pred_obj_score = objective_score(outputs['perm_mat'], outputs['aff_mat'])

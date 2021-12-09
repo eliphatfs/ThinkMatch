@@ -75,7 +75,6 @@ class Net(CNN):
         graphs = data_dict['pyg_graphs']
         batch_size = data_dict['batch_size']
         num_graphs = len(images)
-        # import pdb; pdb.set_trace()
 
         global_list = []
         orig_graph_list = []

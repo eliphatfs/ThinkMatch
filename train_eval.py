@@ -14,11 +14,9 @@ from src.utils.model_sl import load_model, save_model
 from eval import eval_model
 from src.lap_solvers.hungarian import hungarian
 from src.utils.data_to_cuda import data_to_cuda
-from extra.my_focal import MyFocalLoss
 
 from src.utils.config import cfg
 from pygmtools.benchmark import Benchmark
-import numpy
 
 
 def train_eval_model(model,
@@ -71,13 +69,12 @@ def train_eval_model(model,
 
         epoch_loss = 0.0
         running_loss = 0.0
-        running_acc = []
         running_since = time.time()
         iter_num = 0
 
         # Iterate over data.
         while iter_num < cfg.TRAIN.EPOCH_ITERS:
-            for inputs in dataloader[['train', 'train_aug'][epoch >= 0]]:
+            for inputs in dataloader['train']:
                 if iter_num >= cfg.TRAIN.EPOCH_ITERS:
                     break
                 if model.module.device != torch.device('cpu'):
@@ -102,7 +99,7 @@ def train_eval_model(model,
                             d_gt, grad_mask = displacement(outputs['gt_perm_mat'], *outputs['Ps'], outputs['ns'][0])
                             d_pred, _ = displacement(outputs['ds_mat'], *outputs['Ps'], outputs['ns'][0])
                             loss = criterion(d_pred, d_gt, grad_mask)
-                        elif cfg.TRAIN.LOSS_FUNC in ['perm', 'ce', 'hung', 'focal']:
+                        elif cfg.TRAIN.LOSS_FUNC in ['perm', 'ce', 'hung']:
                             loss = criterion(outputs['ds_mat'], outputs['gt_perm_mat'], *outputs['ns'])
                         elif cfg.TRAIN.LOSS_FUNC == 'hamming':
                             loss = criterion(outputs['perm_mat'], outputs['gt_perm_mat'])
@@ -158,7 +155,6 @@ def train_eval_model(model,
                             scaled_loss.backward()
                     else:
                         loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
 
                     batch_num = inputs['batch_size']
@@ -179,12 +175,11 @@ def train_eval_model(model,
                     # statistics
                     running_loss += loss.item() * batch_num
                     epoch_loss += loss.item() * batch_num
-                    running_acc.append(torch.mean(acc).item())
 
                     if iter_num % cfg.STATISTIC_STEP == 0:
                         running_speed = cfg.STATISTIC_STEP * batch_num / (time.time() - running_since)
-                        print('Epoch {:<4} Iteration {:<4} {:>4.2f}sample/s Loss={:<8.4f} Acc={:.4f}'
-                              .format(epoch, iter_num, running_speed, running_loss / cfg.STATISTIC_STEP / batch_num, numpy.mean(running_acc)))
+                        print('Epoch {:<4} Iteration {:<4} {:>4.2f}sample/s Loss={:<8.4f}'
+                              .format(epoch, iter_num, running_speed, running_loss / cfg.STATISTIC_STEP / batch_num))
                         tfboard_writer.add_scalars(
                             'speed',
                             {'speed': running_speed},
@@ -247,7 +242,6 @@ if __name__ == '__main__':
     Net = mod.Net
 
     torch.manual_seed(cfg.RANDOM_SEED)
-    # torch.autograd.anomaly_mode.set_detect_anomaly(True)
 
     dataset_len = {'train': cfg.TRAIN.EPOCH_ITERS * cfg.BATCH_SIZE, 'test': cfg.EVAL.SAMPLES}
     ds_dict = cfg[cfg.DATASET_FULL_NAME] if ('DATASET_FULL_NAME' in cfg) and (cfg.DATASET_FULL_NAME in cfg) else {}
@@ -267,14 +261,8 @@ if __name__ == '__main__':
                      cls=cfg.TRAIN.CLASS if x == 'train' else cfg.EVAL.CLASS,
                      using_all_graphs=cfg.PROBLEM.TRAIN_ALL_GRAPHS if x == 'train' else cfg.PROBLEM.TEST_ALL_GRAPHS)
         for x in ('train', 'test')}
-    image_dataset['train_aug'] = GMDataset(name=cfg.DATASET_FULL_NAME,
-                     bm=benchmark['train'],
-                     problem=cfg.PROBLEM.TYPE,
-                     length=dataset_len['train'],
-                     cls=cfg.TRAIN.CLASS,
-                     using_all_graphs=cfg.PROBLEM.TRAIN_ALL_GRAPHS, augment=True)
-    dataloader = {x: get_dataloader(image_dataset[x], shuffle=True, fix_seed=(x == 'test'), batch_size=cfg.BATCH_SIZE if (x != 'test') else 32)
-                  for x in ('train', 'train_aug', 'test')}
+    dataloader = {x: get_dataloader(image_dataset[x], shuffle=True, fix_seed=(x == 'test'))
+                  for x in ('train', 'test')}
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -288,12 +276,10 @@ if __name__ == '__main__':
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'ce':
         criterion = CrossEntropyLoss()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'focal':
-        criterion = MyFocalLoss(gamma=2.5)
+        criterion = FocalLoss(alpha=.5, gamma=0.)
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hung':
         criterion = PermutationLossHung()
     elif cfg.TRAIN.LOSS_FUNC.lower() == 'hamming':
-        criterion = HammingLoss()
-    elif cfg.TRAIN.LOSS_FUNC.lower() == 'plain':
         criterion = HammingLoss()
     else:
         raise ValueError('Unknown loss function {}'.format(cfg.TRAIN.LOSS_FUNC))
@@ -312,7 +298,7 @@ if __name__ == '__main__':
     if cfg.TRAIN.OPTIMIZER.lower() == 'sgd':
         optimizer = optim.SGD(model_params, lr=cfg.TRAIN.LR, momentum=cfg.TRAIN.MOMENTUM, nesterov=True)
     elif cfg.TRAIN.OPTIMIZER.lower() == 'adam':
-        optimizer = optim.Adam(model_params, lr=cfg.TRAIN.LR, eps=1e-4)
+        optimizer = optim.Adam(model_params, lr=cfg.TRAIN.LR)
     else:
         raise ValueError('Unknown optimizer {}'.format(cfg.TRAIN.OPTIMIZER))
 

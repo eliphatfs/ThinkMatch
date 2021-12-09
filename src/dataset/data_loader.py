@@ -15,18 +15,14 @@ from src.utils.config import cfg
 from itertools import combinations, product
 
 
-pnt = False
-
-
 class GMDataset(Dataset):
-    def __init__(self, name, bm, length, using_all_graphs=False, cls=None, problem='2GM', augment=False):
+    def __init__(self, name, bm, length, using_all_graphs=False, cls=None, problem='2GM'):
         self.name = name
         self.bm = bm
         self.using_all_graphs = using_all_graphs
         self.obj_size = self.bm.obj_resize
         self.test = True if self.bm.sets == 'test' else False
         self.cls = None if cls in ['none', 'all'] else cls
-        self.augment = augment
 
         if self.cls is None:
             if problem == 'MGM3':
@@ -44,7 +40,6 @@ class GMDataset(Dataset):
 
         if self.problem_type == '2GM':
             self.id_combination, self.length = self.bm.get_id_combination(self.cls)
-            # print([*map(len, self.id_combination)])
             self.length_list = []
             for cls in self.classes:
                 cls_length = self.bm.compute_length(cls)
@@ -88,15 +83,10 @@ class GMDataset(Dataset):
         return pyg_graph
 
     def get_pair(self, idx, cls):
-        global pnt
         #anno_pair, perm_mat = self.bm.get_pair(self.cls if self.cls is not None else
         #                                       (idx % (cfg.BATCH_SIZE * len(self.classes))) // cfg.BATCH_SIZE)
         cls_num = random.randrange(0, len(self.classes))
-        if self.augment:
-            ids = list(random.choice(self.id_combination[cls_num]))  # [idx % self.length_list[cls_num]])
-            random.shuffle(ids)
-        else:
-            ids = list(self.id_combination[cls_num][idx % self.length_list[cls_num]])
+        ids = list(self.id_combination[cls_num][idx % self.length_list[cls_num]])
         anno_pair, perm_mat_, id_list = self.bm.get_data(ids)
         perm_mat = perm_mat_[(0, 1)].toarray()
         while min(perm_mat.shape[0], perm_mat.shape[1]) <= 2 or perm_mat.size >= cfg.PROBLEM.MAX_PROB_SIZE > 0:
@@ -140,42 +130,10 @@ class GMDataset(Dataset):
 
         imgs = [anno['img'] for anno in anno_pair]
         if imgs[0] is not None:
-            if self.augment:
-                if not pnt:
-                    # print("AUGMENT")
-                    pnt = True
-                from extra.augmentations import HorizontalFlip, AdjustSharpness, RandomPerspective, draw_kps
-                import uuid
-                nimgs = []
-                nps = []
-                to_pil = transforms.ToPILImage()
-                r1 = HorizontalFlip(random.random() < 0.5)
-                r2 = RandomPerspective()
-                for img, p in zip(imgs, ret_dict['Ps']):
-                    img, p = r1(to_pil(img), p)
-                    nimgs.append(img)
-                    nps.append(p)
-                    # draw_kps(img, p, "data_vis/" + str(uuid.uuid4()) + ".png")
-                ret_dict['Ps'] = nps
-                imgs = nimgs
-                trans = transforms.Compose([
-                    transforms.RandomApply([
-                        transforms.Resize([random.randrange(24, 224)] * 2),
-                        transforms.Resize([256, 256])
-                    ]),
-                    transforms.RandomApply([
-                        transforms.ColorJitter(0.15, 0.15, 0.15),
-                    ]),
-                    transforms.ToTensor(),
-                    # transforms.RandomErasing(),
-                    transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-                ])
-            else:
-                trans = transforms.Compose([
-                    transforms.ToPILImage(),
+            trans = transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
-                ])
+                    ])
             imgs = [trans(img) for img in imgs]
             ret_dict['images'] = imgs
         elif 'feat' in anno_pair[0]['kpts'][0]:
@@ -461,9 +419,8 @@ def worker_init_rand(worker_id):
     np.random.seed(torch.initial_seed() % 2 ** 32)
 
 
-def get_dataloader(dataset, fix_seed=True, shuffle=False, batch_size=cfg.BATCH_SIZE):
-    import torch.utils.data
+def get_dataloader(dataset, fix_seed=True, shuffle=False):
     return torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle, num_workers=cfg.DATALOADER_NUM, collate_fn=collate_fn,
-        pin_memory=False, worker_init_fn=worker_init_fix if fix_seed else None
+        dataset, batch_size=cfg.BATCH_SIZE, shuffle=shuffle, num_workers=cfg.DATALOADER_NUM, collate_fn=collate_fn,
+        pin_memory=False, worker_init_fn=worker_init_fix if fix_seed else worker_init_rand
     )
