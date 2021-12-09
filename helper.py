@@ -130,7 +130,7 @@ def divide_state_dict(d, n):
             result[k] = divide_state_dict(d[k], n)
         return result
     else:
-        return d / n
+        return torch.true_divide(d, n)
 
 
 def self_ensemble():
