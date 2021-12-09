@@ -163,9 +163,9 @@ class GMDataset(Dataset):
                         transforms.Resize([random.randrange(24, 224)] * 2),
                         transforms.Resize([256, 256])
                     ]),
-                    # transforms.RandomApply([
-                    #     transforms.ColorJitter(0.15, 0.15, 0.15),
-                    # ]),
+                    transforms.RandomApply([
+                        transforms.ColorJitter(0.15, 0.15, 0.15),
+                    ]),
                     transforms.ToTensor(),
                     # transforms.RandomErasing(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)

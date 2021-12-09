@@ -52,11 +52,11 @@ class HALOAttention(nn.Module):
 
 
 class get_model(nn.Module):
-    def __init__(self, additional_channel, g_channel, oc=32):
+    def __init__(self, additional_channel, g_channel):
         super(get_model, self).__init__()
         self.normal_channel = True
-        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.4], [36] * 3, 3 + additional_channel, [[64, 128], [128, 256], [64, 128]])
-        self.sa2 = PointNetSetAbstractionMsg(36, [0.15, 0.3, 0.6], [36] * 3, 512, [[96, 128], [192, 256], [96, 128]])
+        self.sa1 = PointNetSetAbstractionMsg(36, [0.1, 0.2, 0.3], [36] * 3, 3 + additional_channel, [[64, 128], [128, 256], [64, 128]])
+        self.sa2 = PointNetSetAbstractionMsg(36, [0.3, 0.6, 1.0], [36] * 3, 512, [[96, 128], [192, 256], [96, 128]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 3, mlp=[300, 1024], group_all=True)
         self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 128 + 256 + 128, mlp=[1024, 512])
         self.fp2 = PointNetFeaturePropagation(in_channel=512 + 128 + 256 + 128, mlp=[512, 384])
@@ -69,7 +69,7 @@ class get_model(nn.Module):
             )
             for _ in range(2)
         ])
-        self.conv1 = nn.Conv1d(256, oc, 1)
+        self.conv1 = nn.Conv1d(256, 32, 1)
         self.cls_emb = nn.Embedding(len(labels), 32)
 
     def forward(self, xyz, g):
