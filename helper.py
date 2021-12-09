@@ -134,10 +134,11 @@ def divide_state_dict(d, n):
 
 
 def self_ensemble():
+    import sys
     cfg_from_file("experiments/igm.yaml")
     states = []
     path_fmt = "output/igm_voc/params/params_%04d.pt"
-    for i in range(1, 25):
+    for i in range(1, int(sys.argv[-1])):
         states.append(torch.load(path_fmt % i))
     torch.save(divide_state_dict(merge_state_dicts(states), len(states)), path_fmt % 9999)
 
