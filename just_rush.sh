@@ -1,2 +1,2 @@
 git pull origin master
-python -u train_eval.py --cfg experiments/igm.yaml | tee train.log
+python -u train_eval.py --cfg experiments/igmv2.yaml | tee train.log
