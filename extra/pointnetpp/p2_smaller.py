@@ -63,7 +63,6 @@ class get_model(nn.Module):
         # self.cls_emb = nn.Embedding(len(labels), 32)
 
     def forward(self, xyz, g):
-        print(xyz[0])
         # Set Abstraction layers
         B,C,N = xyz.shape
         if self.normal_channel:

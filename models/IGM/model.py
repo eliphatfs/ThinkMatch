@@ -156,6 +156,10 @@ class Net(nn.Module):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
+        if (P_src < -0.001).any():
+            print(P_src)
+        if (P_tgt < -0.001).any():
+            print(P_tgt)
         # print(ns_src.max(), ns_tgt.max())
         # print(P_src[0], P_tgt[0])
 
