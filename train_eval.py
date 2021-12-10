@@ -1,3 +1,4 @@
+import numpy
 import torch.optim as optim
 import time
 import xlwt
@@ -66,6 +67,7 @@ def train_eval_model(model,
 
         epoch_loss = 0.0
         running_loss = 0.0
+        running_acc = []
         running_since = time.time()
         iter_num = 0
 
@@ -152,6 +154,7 @@ def train_eval_model(model,
 
                 accdict = dict()
                 accdict['matching accuracy'] = torch.mean(acc)
+                running_acc.append(accdict['matching accuracy'].item())
                 tfboard_writer.add_scalars(
                     'training accuracy',
                     accdict,
@@ -164,8 +167,8 @@ def train_eval_model(model,
 
                 if iter_num % cfg.STATISTIC_STEP == 0:
                     running_speed = cfg.STATISTIC_STEP * batch_num / (time.time() - running_since)
-                    print('Epoch {:<4} Iteration {:<4} {:>4.2f}sample/s Loss={:<8.4f}'
-                          .format(epoch, iter_num, running_speed, running_loss / cfg.STATISTIC_STEP / batch_num))
+                    print('Epoch {:<4} Iteration {:<4} {:>4.2f}sample/s Loss={:<8.4f} Acc={:.4f}'
+                          .format(epoch, iter_num, running_speed, running_loss / cfg.STATISTIC_STEP / batch_num, numpy.mean(running_acc)))
                     tfboard_writer.add_scalars(
                         'speed',
                         {'speed': running_speed},
