@@ -115,7 +115,22 @@ class GMDataset(Dataset):
 
         imgs = [anno['image'] for anno in anno_pair]
         if imgs[0] is not None:
+            from extra.augmentations import HorizontalFlip
+            nimgs = []
+            nps = []
+            flipper = HorizontalFlip(random.random() < 0.5)
+            for img, p in zip(imgs, ret_dict['Ps']):
+                img = transforms.ToPILImage()(img)
+                img, p = flipper(img, p)
+                nimgs.append(img)
+                nps.append(p)
+            imgs = nimgs
+            ret_dict['Ps'] = nps
             trans = transforms.Compose([
+                    transforms.RandomApply([
+                        transforms.Resize([random.randint(24, 336)] * 2),
+                        transforms.Resize([256, 256])
+                    ]),
                     transforms.ToTensor(),
                     transforms.Normalize(cfg.NORM_MEANS, cfg.NORM_STD)
                     ])
