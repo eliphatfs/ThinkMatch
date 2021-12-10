@@ -126,6 +126,9 @@ class GMDataset(Dataset):
             #     nps.append(p)
             # imgs = nimgs
             # ret_dict['Ps'] = nps
+            from extra.augmentations import draw_kps
+            draw_kps(imgs[0], ret_dict['Ps'][0], "test.png")
+            import pdb; pdb.set_trace()
             trans = transforms.Compose([
                     # transforms.RandomApply([
                     #     transforms.Resize([random.randint(24, 336)] * 2),
