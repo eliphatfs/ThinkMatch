@@ -161,9 +161,9 @@ class Net(nn.Module):
         for feat in self.encode(torch.cat([src, tgt])):
             feat_srcs.append(feat[:len(src)])
             feat_tgts.append(feat[len(src):])
-        if self.training:
-            P_src = P_src + torch.rand_like(P_src) * 2 - 1
-            P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1
+        # if self.training:
+        #     P_src = P_src + torch.rand_like(P_src) * 2 - 1
+        #     P_tgt = P_tgt + torch.rand_like(P_tgt) * 2 - 1
         F_src, F_tgt, g_src, g_tgt = self.halo(feat_srcs, feat_tgts, P_src, P_tgt)
 
         # ea_src = self.edge_activations(feat_srcs, F_src, P_src, ns_src)
