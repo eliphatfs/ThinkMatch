@@ -156,6 +156,7 @@ class Net(nn.Module):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
+        print(ns_src.max(), ns_tgt.max())
 
         feat_srcs, feat_tgts = [], []
         for feat in self.encode(torch.cat([src, tgt])):
