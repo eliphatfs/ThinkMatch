@@ -25,7 +25,6 @@ PROBLEM:
     - 256
     - 256
   NUM_GRAPHS: 2
-  FILTER: 'unfiltered'
 
 # Graph construction settings
 GRAPH:

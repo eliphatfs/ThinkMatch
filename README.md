@@ -98,7 +98,7 @@ _ThinkMatch_ includes the flowing datasets with the provided benchmarks:
 * **IMC-PT-SparseGM**
 
 **TODO** We also plan to include the following datasets in the future:
-* **SPair-71k**
+* **SPair-21k**
 * **Synthetic data**
 
 _ThinkMatch_ also supports the following graph matching settings:
@@ -110,7 +110,7 @@ _ThinkMatch_ also supports the following graph matching settings:
 
 ### Docker (RECOMMENDED)
 
-1. We maintain a prebuilt image at [dockerhub](https://hub.docker.com/r/runzhongwang/thinkmatch): ``runzhongwang/thinkmatch:torch1.6.0-cuda10.1-cudnn7-pyg1.6.3-pygmtools0.1.14``. It can be used by docker or other container runtimes that support docker images e.g. [singularity](https://sylabs.io/singularity/).
+1. We maintain a prebuilt image at [dockerhub](https://hub.docker.com/r/runzhongwang/thinkmatch): ``runzhongwang/thinkmatch:torch1.6.0-cuda10.1-cudnn7-pyg1.6.3``. It can be used by docker or other container runtimes that support docker images e.g. [singularity](https://sylabs.io/singularity/).
 2. We also provide a ``Dockerfile`` to build your own image (you may need ``docker`` and ``nvidia-docker`` installed on your computer).
 
 ### Manual configuration (for Ubuntu)
@@ -119,16 +119,15 @@ This repository is developed and tested with Ubuntu 16.04, Python 3.7, Pytorch 1
 1. Install ninja-build: ``apt-get install ninja-build``
 1. Install python packages:
     ```bash
-    pip install tensorboardX scipy easydict pyyaml xlrd xlwt pynvml pygmtools
+    pip install tensorboardX scipy easydict pyyaml xlrd xlwt pynvml
    ```
 1. Install building tools for LPMP:
     ```bash
     apt-get install -y findutils libhdf5-serial-dev git wget libssl-dev
-
+    
     wget https://github.com/Kitware/CMake/releases/download/v3.19.1/cmake-3.19.1.tar.gz && tar zxvf cmake-3.19.1.tar.gz
     cd cmake-3.19.1 && ./bootstrap && make && make install
     ```
-
 1. Install and build LPMP:
     ```bash
    python -m pip install git+https://git@github.com/rogerwwww/lpmp.git
@@ -138,10 +137,10 @@ This repository is developed and tested with Ubuntu 16.04, Python 3.7, Pytorch 1
    apt-get update
    apt-get install -y software-properties-common
    add-apt-repository ppa:ubuntu-toolchain-r/test
+   
    apt-get install -y gcc-9 g++-9
    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9
    ```
-
 1. Install torch-geometric:
     ```bash
     export CUDA=cu101
@@ -152,23 +151,17 @@ This repository is developed and tested with Ubuntu 16.04, Python 3.7, Pytorch 1
     /opt/conda/bin/pip install torch-spline-conv==1.2.0 -f https://pytorch-geometric.com/whl/torch-${TORCH}+${CUDA}.html
     /opt/conda/bin/pip install torch-geometric==1.6.3
    ```
-
 1. If you have configured ``gcc-9`` to build LPMP, be sure to switch back to ``gcc-7`` because this code repository is based on ``gcc-7``. Here is also an example:
-
     ```bash
     update-alternatives --remove gcc /usr/bin/gcc-9
-   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
    ```
 
 ### Available datasets
-
-Note: All following datasets can be automatically downloaded and unzipped by `pygmtools`, but you can also download the dataset yourself if a download failure occurs.
-
 1. PascalVOC-Keypoint
-
-    1. Download [VOC2011 dataset](http://host.robots.ox.ac.uk/pascal/VOC/voc2011/index.html) and make sure it looks like ``data/PascalVOC/TrainVal/VOCdevkit/VOC2011``
+    1. Download [VOC2011 dataset](http://host.robots.ox.ac.uk/pascal/VOC/voc2011/index.html) and make sure it looks like ``data/PascalVOC/VOC2011``
     1. Download keypoint annotation for VOC2011 from [Berkeley server](https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/shape/poselets/voc2011_keypoints_Feb2012.tgz) or [google drive](https://drive.google.com/open?id=1D5o8rmnY1-DaDrgAXSygnflX5c-JyUWR) and make sure it looks like ``data/PascalVOC/annotations``
-    1. The train/test split is available in ``data/PascalVOC/voc2011_pairs.npz``. **This file must be added manually.**
+    1. The train/test split is available in ``data/PascalVOC/voc2011_pairs.npz``
 
     Please cite the following papers if you use PascalVOC-Keypoint dataset:
     ```
@@ -192,7 +185,7 @@ Note: All following datasets can be automatically downloaded and unzipped by `py
     ```
 1. Willow-Object-Class
     1. Download [Willow-ObjectClass dataset](http://www.di.ens.fr/willow/research/graphlearning/WILLOW-ObjectClass_dataset.zip)
-    1. Unzip the dataset and make sure it looks like ``data/WillowObject/WILLOW-ObjectClass``
+    1. Unzip the dataset and make sure it looks like ``data/WILLOW-ObjectClass``
 
     Please cite the following paper if you use Willow-Object-Class dataset:
     ```
@@ -204,10 +197,9 @@ Note: All following datasets can be automatically downloaded and unzipped by `py
       year={2013}
     }
     ```
-
 1. CUB2011
     1. Download [CUB-200-2011 dataset](http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz).
-    1. Unzip the dataset and make sure it looks like ``data/CUB_200_2011/CUB_200_2011``
+    1. Unzip the dataset and make sure it looks like ``data/CUB_200_2011``
 
     Please cite the following report if you use CUB2011 dataset:
     ```
@@ -219,10 +211,9 @@ Note: All following datasets can be automatically downloaded and unzipped by `py
       Number = {CNS-TR-2011-001}
     }
     ```
-
 1. IMC-PT-SparseGM
     1. Download the IMC-PT-SparseGM dataset from [google drive](https://drive.google.com/file/d/1Po9pRMWXTqKK2ABPpVmkcsOq-6K_2v-B/view?usp=sharing) or [baidu drive (code: 0576)](https://pan.baidu.com/s/1hlJdIFp4rkiz1Y-gztyHIw)
-    1. Unzip the dataset and make sure it looks like ``data/IMC_PT_SparseGM/annotations``
+    1. Unzip the dataset and make sure it looks like ``data/IMC_PT_SparseGM/annotation``
 
     Please cite the following papers if you use IMC-PT-SparseGM dataset:
     ```
@@ -241,9 +232,6 @@ Note: All following datasets can be automatically downloaded and unzipped by `py
       year={2021}
     }
     ```
-
-For more information, please see [pygmtools](https://pypi.org/project/pygmtools/).
-
 ## Run the Experiment
 
 Run training and evaluation
@@ -259,7 +247,7 @@ python train_eval.py --cfg experiments/vgg16_pca_voc.yaml
 Default configuration files are stored in``experiments/`` and you are welcomed to try your own configurations. If you find a better yaml configuration, please let us know by raising an issue or a PR and we will update the benchmark!
 
 ## Pretrained Models
-_ThinkMatch_ provides pretrained models. The model weights are available via [google drive](https://drive.google.com/drive/folders/11xAQlaEsMrRlIVc00nqWrjHf8VOXUxHQ?usp=sharing)
+_ThinkMatch_ provides pretrained models. The model weights are available via [google drive](https://drive.google.com/drive/folders/11xAQlaEsMrRlIVc00nqWrjHf8VOXUxHQ?usp=sharing).
 
 To use the pretrained models, firstly download the weight files, then add the following line to your yaml file:
 ```yaml
