@@ -115,20 +115,20 @@ class GMDataset(Dataset):
 
         imgs = [anno['image'] for anno in anno_pair]
         if imgs[0] is not None:
-            # from extra.augmentations import HorizontalFlip
-            # nimgs = []
-            # nps = []
-            # flipper = HorizontalFlip(random.random() < 0.5)
-            # for img, p in zip(imgs, ret_dict['Ps']):
-            #     # img = transforms.ToPILImage()(img)
-            #     img, p = flipper(img, p)
-            #     nimgs.append(img)
-            #     nps.append(p)
-            # imgs = nimgs
-            # ret_dict['Ps'] = nps
-            from extra.augmentations import draw_kps
-            draw_kps(imgs[0], ret_dict['Ps'][0], "test.png")
-            import pdb; pdb.set_trace()
+            from extra.augmentations import HorizontalFlip
+            nimgs = []
+            nps = []
+            flipper = HorizontalFlip(random.random() < 0.5)
+            for img, p in zip(imgs, ret_dict['Ps']):
+                # img = transforms.ToPILImage()(img)
+                img, p = flipper(img, p)
+                nimgs.append(img)
+                nps.append(p)
+            imgs = nimgs
+            ret_dict['Ps'] = nps
+            # from extra.augmentations import draw_kps
+            # draw_kps(imgs[0], ret_dict['Ps'][0], "test.png")
+            # import pdb; pdb.set_trace()
             trans = transforms.Compose([
                     # transforms.RandomApply([
                     #     transforms.Resize([random.randint(24, 336)] * 2),
