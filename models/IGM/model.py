@@ -63,12 +63,12 @@ class Net(nn.Module):
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
         self.sconv = SiameseSConvOnNodes(256)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
-        self.pix2cl_proj = ResCls(1, 1024, 512, 128)
+        self.pix2pt_proj = nn.Conv1d(feature_lat, 512, 1)  # ResCls(1, feature_lat, 512, 256)
+        self.pix2cl_proj = nn.Conv1d(1024, 128, 1)  # ResCls(1, 1024, 512, 128)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(256, 128)
+        self.pn = p2_smaller.get_model(512, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -140,9 +140,9 @@ class Net(nn.Module):
         resc = P_src.new_tensor(self.rescale)
         P_src, P_tgt = P_src / resc, P_tgt / resc
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
-        if self.training:
-            P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
-            P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
+        # if self.training:
+        #     P_src = P_src + torch.rand_like(P_src)[..., :1] * 0.2 - 0.1
+        #     P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
         key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
