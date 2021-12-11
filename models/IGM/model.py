@@ -150,7 +150,8 @@ class Net(nn.Module):
         P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
         pcd = torch.cat((P_src, P_tgt), -1)
         y_cat = torch.cat((y_src, y_tgt), -1)
-        return self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, g)[..., :y_src.shape[-1]]
+        r1, r2 = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, g)
+        return r1[..., :y_src.shape[-1]], r2[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
@@ -185,8 +186,8 @@ class Net(nn.Module):
         y_src = unbatch_features(y_src, G_src.x, ns_src)
         y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)
         
-        folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
-        folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
+        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
+        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
@@ -195,4 +196,6 @@ class Net(nn.Module):
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
+        data_dict['ff'] = [ff_src, ff_tgt]
+        data_dict['gf'] = [g_src, g_tgt]
         return data_dict

@@ -84,4 +84,4 @@ class get_model(nn.Module):
         l0_points = self.fp1(l0_xyz, l1_xyz, torch.cat([g, l0_xyz, l0_points], 1), l1_points)
         # FC layers
         x = self.conv1(l0_points)
-        return x
+        return l0_points, x
