@@ -35,6 +35,7 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.backbone = Backbone()
+        self.backbone_params = self.backbone.backbone_params
         self.message_pass_node_features = SiameseSConvOnNodes(input_node_dim=1536)
         self.build_edge_features_from_node_features = SiameseNodeFeaturesToEdgeFeatures(
             total_num_nodes=self.message_pass_node_features.num_node_features
