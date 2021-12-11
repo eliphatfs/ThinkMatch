@@ -82,3 +82,19 @@ NGM:
   SK_EMB: 1
   FIRST_ORDER: True
   EDGE_EMB: False
+
+IGM:
+  EDGE_FEATURE: cat
+  FEATURE_CHANNEL: 512
+  SK_ITER_NUM: 10
+  SK_EPSILON: 1.0e-10
+  SK_TAU: 5.65  # sqrt of 32
+  GNN_FEAT:
+    - 16
+    - 16
+    - 16
+  GNN_LAYER: 3
+  GAUSSIAN_SIGMA: 1.
+  SK_EMB: 1
+  FIRST_ORDER: True
+  EDGE_EMB: False
