@@ -62,7 +62,7 @@ class Net(nn.Module):
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
         feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
-        # self.sconv = SiameseSConvOnNodes(48)
+        self.sconv = SiameseSConvOnNodes(256)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
@@ -176,6 +176,14 @@ class Net(nn.Module):
         g_src, g_tgt = self.pix2cl_proj(g_src), self.pix2cl_proj(g_tgt)
         y_src, y_tgt = F.normalize(y_src, dim=1), F.normalize(y_tgt, dim=1)
         g_src, g_tgt = F.normalize(g_src, dim=1), F.normalize(g_tgt, dim=1)
+
+        G_src, G_tgt = data_dict['pyg_graphs']
+        G_src.x = batch_features(y_src, ns_src)
+        G_src = self.sconv(G_src)
+        G_tgt.x = batch_features(y_tgt, ns_tgt)
+        G_tgt = self.sconv(G_tgt)
+        y_src = unbatch_features(y_src, G_src.x, ns_src)
+        y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)
         
         folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
         folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
