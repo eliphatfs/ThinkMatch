@@ -61,14 +61,14 @@ class Net(nn.Module):
         super().__init__()
         self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        feature_lat = 64 + (64 + 128 + 256 + 512 + 512 * 2)
+        feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
         # self.sconv = SiameseSConvOnNodes(48)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 128)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         # self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 1)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        self.pn = p2_smaller.get_model(128, 128)
+        self.pn = p2_smaller.get_model(256, 128)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -106,17 +106,17 @@ class Net(nn.Module):
         ], 1)
         glob_src = feat_srcs[-1].flatten(1).unsqueeze(-1)
         glob_tgt = feat_tgts[-1].flatten(1).unsqueeze(-1)
-        F_src = torch.cat([
-            U_src,
-            glob_tgt.expand(*glob_tgt.shape[:-1], U_src.shape[-1])
-        ], 1)
-        F_tgt = torch.cat([
-            U_tgt,
-            glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
-        ], 1)
+        # F_src = torch.cat([
+        #     U_src,
+        #     glob_tgt.expand(*glob_tgt.shape[:-1], U_src.shape[-1])
+        # ], 1)
+        # F_tgt = torch.cat([
+        #     U_tgt,
+        #     glob_src.expand(*glob_src.shape[:-1], U_tgt.shape[-1])
+        # ], 1)
         ghalo_src = torch.cat((glob_src, glob_tgt), 1)
         ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
-        return F_src, F_tgt, ghalo_src, ghalo_tgt
+        return U_src, U_tgt, ghalo_src, ghalo_tgt
 
     def edge_activations(self, feats, F, P, n):
         # F: BCN

@@ -143,6 +143,7 @@ def train_eval_model(model,
                         scaled_loss.backward()
                 else:
                     loss.backward()
+                torch.nn.utils.clip_grad.clip_grad_norm_(model.parameters(), 2.0)
                 optimizer.step()
 
                 batch_num = inputs['batch_size']
