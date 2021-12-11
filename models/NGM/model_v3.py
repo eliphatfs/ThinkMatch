@@ -68,6 +68,10 @@ class Net(nn.Module):
             self.add_module('gnn_layer_{}'.format(i), gnn_layer)
         self.classifier = nn.Linear(cfg.NGM.GNN_FEAT[-1] + cfg.NGM.SK_EMB, 1)
 
+    @property
+    def device(self):
+        return self.backbone.device
+
     def forward(
         self,
         data_dict,
