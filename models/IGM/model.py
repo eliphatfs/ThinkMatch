@@ -66,8 +66,8 @@ class Net(nn.Module):
         self.sconv = SiameseSConvOnNodes(256)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
-        self.edge_gate = ResCls(2, feature_lat * 3 - 512, 1024, 1)
-        self.edge_proj = ResCls(2, feature_lat * 3 - 512, 1024, 64)
+        self.edge_gate = ResCls(1, feature_lat * 3, 512, 1)
+        self.edge_proj = ResCls(1, feature_lat * 3, 512, 64)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(256, 128, 64)
