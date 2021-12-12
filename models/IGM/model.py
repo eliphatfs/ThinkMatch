@@ -194,8 +194,8 @@ class Net(nn.Module):
         y_src = unbatch_features(y_src, G_src.x, ns_src)
         y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)
         
-        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
-        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
+        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
+        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
