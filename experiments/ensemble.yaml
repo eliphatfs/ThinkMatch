@@ -7,7 +7,7 @@ MODULE: models.Ensemble.model
 
 BACKBONE: VGG16_bn_final
 
-PRETRAINED_PATH: pretrained_params_vgg16_ngmv2_voc.pt
+# PRETRAINED_PATH: pretrained_params_vgg16_ngmv2_voc.pt
 
 BATCH_SIZE: 48
 DATALOADER_NUM: 10
