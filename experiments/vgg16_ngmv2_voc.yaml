@@ -7,10 +7,10 @@ MODULE: models.NGM.model_v2
 
 BACKBONE: VGG16_bn_final
 
-# PRETRAINED_PATH: pretrained_weights/pretrained_params_vgg16_ngmv2_voc.pt
+PRETRAINED_PATH: pretrained_params_vgg16_ngmv2_voc.pt
 
-BATCH_SIZE: 8
-DATALOADER_NUM: 2
+BATCH_SIZE: 32
+DATALOADER_NUM: 10
 FP16: False
 
 RANDOM_SEED: 123
