@@ -15,7 +15,6 @@ from src.utils.model_sl import load_model, save_model
 from eval import eval_model
 from src.lap_solvers.hungarian import hungarian
 from src.utils.data_to_cuda import data_to_cuda
-from extra.my_focal import MyFocalLoss
 
 from src.utils.config import cfg, cfg_from_file
 from pygmtools.benchmark import Benchmark
