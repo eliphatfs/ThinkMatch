@@ -47,6 +47,7 @@ __C.IGM.GUMBEL_SK = 0 # 0 for no gumbel, other wise for number of gumbel samples
 __C.IGM.UNIV_SIZE = -1
 __C.IGM.POSITIVE_EDGES = True
 
+__C.BBGM = edict()
 __C.BBGM.SOLVER_NAME = 'LPMP'
 __C.BBGM.LAMBDA_VAL = 80.0
 __C.BBGM.SOLVER_PARAMS = edict()
