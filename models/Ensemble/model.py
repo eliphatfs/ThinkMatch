@@ -26,6 +26,6 @@ class Net(torch.nn.Module):
         ns_src, ns_tgt = x['ns']
         ds = ds + x['ds_mat']
         x = self.bbgm(x)
-        ds = ds + x['perm_mat']
+        ds = ds + x['perm_mat'] * 0.5
         x['perm_mat'] = hungarian(ds, ns_src, ns_tgt)
         return x
