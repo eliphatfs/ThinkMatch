@@ -46,3 +46,11 @@ __C.IGM.SK_EMB = 1
 __C.IGM.GUMBEL_SK = 0 # 0 for no gumbel, other wise for number of gumbel samples
 __C.IGM.UNIV_SIZE = -1
 __C.IGM.POSITIVE_EDGES = True
+
+__C.BBGM.SOLVER_NAME = 'LPMP'
+__C.BBGM.LAMBDA_VAL = 80.0
+__C.BBGM.SOLVER_PARAMS = edict()
+__C.BBGM.SOLVER_PARAMS.timeout = 1000
+__C.BBGM.SOLVER_PARAMS.primalComputationInterval = 10
+__C.BBGM.SOLVER_PARAMS.maxIter = 100
+__C.BBGM.FEATURE_CHANNEL = 1024
