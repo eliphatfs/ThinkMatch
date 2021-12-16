@@ -11,7 +11,7 @@ PRETRAINED_PATH: pretrained_weights/pretrained_params_vgg16_ngmv2_voc.pt  # init
 # PRETRAINED_PATH: pretrained_weights/pretrained_params_vgg16_nhgmv2_voc.pt  # test with pretrained model
 
 BATCH_SIZE: 8
-DATALOADER_NUM: 2
+DATALOADER_NUM: 8
 FP16: False
 
 RANDOM_SEED: 123
@@ -63,7 +63,7 @@ TRAIN:
 
 # Evaluation settings
 EVAL:
-  EPOCH: 30  # epoch to be tested
+  EPOCH: -1  # epoch to be tested
   SAMPLES: 1000  # number of tested pairs for each class
 
 # model parameters
