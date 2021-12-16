@@ -246,7 +246,7 @@ if __name__ == '__main__':
                               length=cfg.EVAL.SAMPLES,
                               cls=cfg.EVAL.CLASS,
                               obj_resize=cfg.PROBLEM.RESCALE)
-    dataloader = get_dataloader(image_dataset, batch=2)
+    dataloader = get_dataloader(image_dataset, batch=48)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
