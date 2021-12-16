@@ -1,4 +1,4 @@
-MODEL_NAME: igm_abl_vgg
+MODEL_NAME: igm_abl_vgg_sonv
 DATASET_NAME: voc
 
 DATASET_FULL_NAME: PascalVOC
