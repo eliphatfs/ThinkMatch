@@ -8,7 +8,6 @@ from src.lap_solvers.sinkhorn import Sinkhorn
 from extra.pointnetpp import p2_smaller
 from models.BBGM.sconv_archs import SiameseSConvOnNodes
 from src.loss_func import PermutationLoss
-from src.backbone import VGG16_bn_final
 
 loss_fn = PermutationLoss()
 FF = F
@@ -60,10 +59,10 @@ def unbatch_features(orig, embeddings, num_vertices):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        # self.resnet = resnet34(True)  # UNet(3, 2)
-        self.resnet = VGG16_bn_final()
+        self.resnet = resnet34(True)  # UNet(3, 2)
+        # self.resnet = VGG16_bn_final()
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        feature_lat = 1536  # 64 + (64 + 128 + 256 + 512 + 512)
+        feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
         self.sconv = SiameseSConvOnNodes(256)
         self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
@@ -83,13 +82,6 @@ class Net(nn.Module):
 
     def encode(self, x):
         r = self.resnet
-        x = r.node_layers(x)
-        yield x
-        x = r.edge_layers(x)
-        yield x
-        x = r.final_layers(x)
-        yield x
-        return
         x = r.conv1(x)
         x = r.bn1(x)
         x = r.relu(x)
