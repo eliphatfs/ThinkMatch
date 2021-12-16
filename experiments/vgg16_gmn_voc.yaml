@@ -8,7 +8,7 @@ MODULE: models.GMN.model
 BACKBONE: VGG16_bn
 
 BATCH_SIZE: 8
-DATALOADER_NUM: 2
+DATALOADER_NUM: 8
 
 RANDOM_SEED: 123
 
@@ -51,7 +51,7 @@ TRAIN:
 
 # Evaluation settings
 EVAL:
-  EPOCH: 10  # epoch to be tested
+  EPOCH: -1  # epoch to be tested
   SAMPLES: 1000  # number of tested pairs for each class
 
 # GMN model parameters
