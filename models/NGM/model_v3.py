@@ -94,7 +94,7 @@ class Net(nn.Module):
 
         global_list = []
         orig_graph_list = []
-        for feat, glob, n_p, graph in zip(data_dict['ff'], data_dict['gf'], n_points, graphs):
+        for feat, glob, n_p, graph in zip(data_dict['rf'], data_dict['gf'], n_points, graphs):
 
             global_list.append(glob.reshape((feat.shape[0], -1)))
 

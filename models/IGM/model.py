@@ -205,5 +205,6 @@ class Net(nn.Module):
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         data_dict['ff'] = [ff_src, ff_tgt]
+        data_dict['rf'] = [y_src, y_tgt]
         data_dict['gf'] = [g_src, g_tgt]
         return data_dict
