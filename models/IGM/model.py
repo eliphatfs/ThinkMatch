@@ -69,9 +69,11 @@ class PHALO(nn.Module):
         # self.attn_2 = p2_smaller.HALOAttention(sinkhorn, nn.Identity(), 512, 64)
 
     def forward(self, x_src, x_tgt, es_src, es_tgt, g_src, g_tgt, n_src, n_tgt):
+        p_src, p_tgt = x_src[:, :3], x_tgt[:, :3]
         x_src, _ = self.prop_1(x_src, es_src, g_src)
         x_tgt, _ = self.prop_1(x_tgt, es_tgt, g_tgt)
         x_src, x_tgt = self.attn_1(x_src, x_tgt, n_src, n_tgt)
+        x_src, x_tgt = torch.cat([x_src, p_src], 1), torch.cat([x_tgt, p_tgt], 1)
         x_src, px_src = self.prop_2(x_src, es_src, g_src)
         x_tgt, px_tgt = self.prop_2(x_tgt, es_tgt, g_tgt)
         # x_src, x_tgt = self.attn_2(x_src, x_tgt, n_src, n_tgt)
