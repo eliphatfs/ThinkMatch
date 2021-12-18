@@ -147,7 +147,7 @@ class Net(nn.Module):
         #     P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
-        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
+        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt & ~key_mask_tgt), -1).unsqueeze(1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
         pcd = torch.cat((P_src, P_tgt), -1)
