@@ -138,7 +138,7 @@ def self_ensemble():
     states = []
     path_fmt = "output/" + sys.argv[-2] + "/params/params_%04d.pt"
     for i in range(1, int(sys.argv[-1])):
-        states.append(torch.load(path_fmt % i))
+        states.append(torch.load(path_fmt % i, map_location='cpu'))
     torch.save(divide_state_dict(merge_state_dicts(states), len(states)), path_fmt % 9999)
 
 
