@@ -1,4 +1,4 @@
-from torchvision.models import resnet34, vgg16_bn
+from torchvision.models import resnet34
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -60,12 +60,11 @@ def unbatch_features(orig, embeddings, num_vertices):
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        # self.resnet = resnet34(True)  # UNet(3, 2)
-        self.resnet = vgg16_bn(True)
+        self.resnet = resnet34(True)  # UNet(3, 2)
         # self.unet.load_state_dict(torch.load("unet_carvana_scale0.5_epoch1.pth"))
-        feature_lat = (64 + 128 + 256 + 512 + 512 + 512)
+        feature_lat = 64 + (64 + 128 + 256 + 512 + 512)
         self.sconv = SiameseSConvOnNodes(256)
-        self.pix2pt_proj = ResCls(1, feature_lat, 512, 256)
+        self.pix2pt_proj = ResCls(1, feature_lat, 512, 64)
         self.pix2cl_proj = ResCls(1, 1024, 512, 128)
         self.edge_gate = ResCls(1, feature_lat * 3, 512, 1)
         self.edge_proj = ResCls(1, feature_lat * 3, 512, 64)
@@ -83,13 +82,6 @@ class Net(nn.Module):
 
     def encode(self, x):
         r = self.resnet
-        for layer in r.features:
-            if isinstance(layer, nn.MaxPool2d):
-                yield x
-            x = layer(x)
-        x = F.adaptive_avg_pool2d(x, (1, 1))
-        yield x
-        return
         x = r.conv1(x)
         x = r.bn1(x)
         x = r.relu(x)
@@ -155,7 +147,7 @@ class Net(nn.Module):
         #     P_tgt = P_tgt + torch.rand_like(P_tgt)[..., :1] * 0.2 - 0.1
         key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
         key_mask_tgt = torch.arange(y_tgt.shape[-1], device=n_tgt.device).expand(len(y_tgt), y_tgt.shape[-1]) < n_tgt.unsqueeze(-1)
-        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt & ~key_mask_tgt), -1).unsqueeze(1)
+        key_mask_cat = torch.cat((key_mask_src, key_mask_tgt), -1).unsqueeze(1)
         P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
         P_tgt = torch.cat((P_tgt, torch.ones_like(P_tgt[:, :1])), 1)
         pcd = torch.cat((P_src, P_tgt), -1)
@@ -201,9 +193,10 @@ class Net(nn.Module):
         G_tgt = self.sconv(G_tgt)
         y_src = unbatch_features(y_src, G_src.x, ns_src)
         y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)'''
+        folding_src, folding_tgt = y_src, y_tgt
         
-        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
-        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
+        # ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
+        # ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
 
         sim = torch.einsum(
             'bci,bcj->bij',
@@ -212,7 +205,7 @@ class Net(nn.Module):
         )
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
-        data_dict['ff'] = [ff_src, ff_tgt]
+        # data_dict['ff'] = [ff_src, ff_tgt]
         data_dict['rf'] = [y_src, y_tgt]
         data_dict['gf'] = [g_src, g_tgt]
         return data_dict
