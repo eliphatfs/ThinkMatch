@@ -57,29 +57,6 @@ def unbatch_features(orig, embeddings, num_vertices):
     return res
 
 
-class PHALO(nn.Module):
-    def __init__(self):
-        super().__init__()
-        sinkhorn = Sinkhorn(
-            max_iter=cfg.IGM.SK_ITER_NUM, tau=cfg.IGM.SK_TAU, epsilon=cfg.IGM.SK_EPSILON
-        )
-        self.prop_1 = p2_smaller.MultiScalePropagation(256, 128, 64, 512)
-        self.attn_1 = p2_smaller.HALOAttention(sinkhorn, nn.Identity(), 512, 64)
-        self.prop_2 = p2_smaller.MultiScalePropagation(512, 128, 64, 512)
-        # self.attn_2 = p2_smaller.HALOAttention(sinkhorn, nn.Identity(), 512, 64)
-
-    def forward(self, x_src, x_tgt, es_src, es_tgt, g_src, g_tgt, n_src, n_tgt):
-        p_src, p_tgt = x_src[:, :3], x_tgt[:, :3]
-        x_src, _ = self.prop_1(x_src, es_src, g_src)
-        x_tgt, _ = self.prop_1(x_tgt, es_tgt, g_tgt)
-        x_src, x_tgt = self.attn_1(x_src, x_tgt, n_src, n_tgt)
-        x_src, x_tgt = torch.cat([x_src, p_src], 1), torch.cat([x_tgt, p_tgt], 1)
-        x_src, px_src = self.prop_2(x_src, es_src, g_src)
-        x_tgt, px_tgt = self.prop_2(x_tgt, es_tgt, g_tgt)
-        # x_src, x_tgt = self.attn_2(x_src, x_tgt, n_src, n_tgt)
-        return x_src, x_tgt, px_src, px_tgt
-
-
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
@@ -93,8 +70,7 @@ class Net(nn.Module):
         self.edge_proj = ResCls(1, feature_lat * 3, 512, 64)
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
-        # self.pn = p2_smaller.get_model(256, 128, 64)
-        self.phalo = PHALO()
+        self.pn = p2_smaller.get_model(256, 128, 64)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
@@ -185,14 +161,6 @@ class Net(nn.Module):
         r1, r2 = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, e_cat, g)
         return r1[..., :y_src.shape[-1]], r2[..., :y_src.shape[-1]]
 
-    def prepare_points(self, y_src, P_src, n_src):
-        resc = P_src.new_tensor(self.rescale)
-        P_src = P_src / resc
-        P_src = P_src.transpose(1, 2)
-        key_mask_src = torch.arange(y_src.shape[-1], device=n_src.device).expand(len(y_src), y_src.shape[-1]) < n_src.unsqueeze(-1)
-        P_src = torch.cat((P_src, torch.zeros_like(P_src[:, :1])), 1)
-        return torch.cat((P_src, y_src), 1) * key_mask_src.unsqueeze(1)
-
     def forward(self, data_dict, **kwargs):
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
@@ -226,12 +194,9 @@ class Net(nn.Module):
         y_src = unbatch_features(y_src, G_src.x, ns_src)
         y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)'''
         
-        # ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
-        # ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
+        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
+        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
 
-        ps_src = self.prepare_points(y_src, P_src, ns_src)
-        ps_tgt = self.prepare_points(y_tgt, P_tgt, ns_tgt)
-        ff_src, ff_tgt, folding_src, folding_tgt = self.phalo(ps_src, ps_tgt, ea_src, ea_tgt, g_src, g_tgt, ns_src, ns_tgt)
         sim = torch.einsum(
             'bci,bcj->bij',
             folding_src,
