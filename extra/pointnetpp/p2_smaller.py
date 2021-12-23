@@ -8,6 +8,7 @@ from pygmtools.dataset import VOC2011_KPT_NAMES
 labels = sorted(VOC2011_KPT_NAMES)
 
 
+# Unused layer, for future Sinkhorn Transformer
 class MultiScalePropagation(nn.Module):
     def __init__(self, additional_channel, g_channel, o_channel):
         super().__init__()
@@ -25,6 +26,7 @@ class MultiScalePropagation(nn.Module):
         return self.proj(l0_points)
 
 
+# Unused layer, for future Sinkhorn Transformer
 class HALOAttention(nn.Module):
     def __init__(self, sinkhorn, exff, emb_c, head_c):
         super().__init__()
@@ -63,6 +65,11 @@ class get_model(nn.Module):
         # self.cls_emb = nn.Embedding(len(labels), 32)
 
     def forward(self, xyz, es, g):
+        # Basically PointNet++, but we don't do down-sampling
+        # And we have edge features and CNN global features
+        # The global features replace auxiliary classifier features in PointNet++
+        # Edge features are used in Set Abstraction
+
         # Set Abstraction layers
         B,C,N = xyz.shape
         if self.normal_channel:
@@ -73,6 +80,7 @@ class get_model(nn.Module):
             l0_xyz = xyz
         l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, es)
         l2_xyz, l2_points = l1_xyz, l1_points  # self.sa2(l1_xyz, l1_points)
+        # One less layer than PointNet++ since we don't down-sample
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
         # Feature Propagation layers
         l2_points = self.fp3(l2_xyz, l3_xyz, l2_points, l3_points)

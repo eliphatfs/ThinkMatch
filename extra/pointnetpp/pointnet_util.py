@@ -254,6 +254,8 @@ class PointNetSetAbstractionMsg(nn.Module):
             else:
                 grouped_points = grouped_xyz
 
+            # Basically PointNet++, but we don't do down-sampling
+            # And here we concatenate with extra edge feature inputs
             grouped_points = torch.cat([
                 grouped_points,
                 es[
