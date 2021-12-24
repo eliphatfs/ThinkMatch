@@ -69,7 +69,7 @@ class GMDataset(Dataset):
         )
         from models.BBGM.sconv_archs import SConv
         sconv = SConv(2, 10)
-        torch.save({"sconv": sconv, "graph": pyg_graph, "output": sconv(pyg_graph)}, "test_sconv.pt")
+        torch.save({"sconv": sconv.state_dict(), "graph": pyg_graph, "output": sconv(pyg_graph)}, "test_sconv.pt")
         import pdb; pdb.set_trace()
         return pyg_graph
 
