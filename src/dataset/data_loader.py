@@ -67,6 +67,10 @@ class GMDataset(Dataset):
             edge_attr=torch.tensor(edge_attr).to(torch.float32),
             hyperedge_index=torch.tensor(np.array(hyperedge_index), dtype=torch.long),
         )
+        print("X")
+        print(pyg_graph.x.shape)
+        print(pyg_graph.edge_index.shape)
+        print(pyg_graph.edge_attr.shape)
         return pyg_graph
 
     def get_pair(self, idx, cls):
