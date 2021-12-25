@@ -67,16 +67,6 @@ class GMDataset(Dataset):
             edge_attr=torch.tensor(edge_attr).to(torch.float32),
             hyperedge_index=torch.tensor(np.array(hyperedge_index), dtype=torch.long),
         )
-        graph = {
-            'x': (P / rescale),
-            'edge_index': np.array(edge_index),
-            'edge_attr': edge_attr,
-            'hyperedge_index': np.array(hyperedge_index),
-        }
-        from models.BBGM.sconv_archs import SConv
-        sconv = SConv(2, 10)
-        torch.save({"sconv": sconv.state_dict(), "graph": graph, "output": sconv(pyg_graph)}, "test_sconv.pt")
-        import pdb; pdb.set_trace()
         return pyg_graph
 
     def get_pair(self, idx, cls):
