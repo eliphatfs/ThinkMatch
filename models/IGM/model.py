@@ -216,7 +216,7 @@ class Net(nn.Module):
         ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
 
         # Metric learning affinity
-        sim = self.aff(folding_src, folding_tgt)
+        sim = self.aff(folding_src.transpose(1, 2), folding_tgt.transpose(1, 2))
         # Simple dot-product affinity
         # sim = torch.einsum(
         #     'bci,bcj->bij',
