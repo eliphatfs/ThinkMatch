@@ -137,7 +137,7 @@ class GMDataset(Dataset):
             nps = []
             flipper = HorizontalFlip(random.random() < 0.5)
             for img, p in zip(imgs, ret_dict['Ps']):
-                # img = transforms.ToPILImage()(img)
+                img = transforms.ToPILImage()(img)
                 img, p = flipper(img, p)
                 nimgs.append(img)
                 nps.append(p)
