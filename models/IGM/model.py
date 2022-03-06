@@ -222,8 +222,8 @@ class Net(nn.Module):
         )
         # Sinkhorn and output
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
-        mask_src = self.masker(ff_src)  # B x s
-        mask_tgt = self.masker(ff_tgt)  # B x t
+        mask_src = self.masker(ff_src).squeeze(1)  # B x s
+        mask_tgt = self.masker(ff_tgt).squeeze(1)  # B x t
         # B x s x t
         data_dict['ds_mat'] = data_dict['ds_mat'] * mask_src.unsqueeze(-1) * mask_tgt.unsqueeze(-2)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
