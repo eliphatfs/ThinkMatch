@@ -74,7 +74,7 @@ class Net(nn.Module):
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(256, 128, 64)
-        self.masker = nn.Conv2d(256, 1, 1)
+        self.masker = nn.Conv1d(256, 1, 1)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
