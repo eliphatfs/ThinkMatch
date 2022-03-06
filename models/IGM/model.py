@@ -120,31 +120,7 @@ class Net(nn.Module):
         ghalo_tgt = torch.cat((glob_tgt, glob_src), 1)
         return U_src, U_tgt, ghalo_src, ghalo_tgt
 
-    def edge_activations(self, feats, F, P, n):
-        # F: BCN, P: BN2, n: B
-        # Grab middle points between keypoints as edge features
-        ep = ((P.unsqueeze(-2) + P.unsqueeze(-3)) / 2).flatten(1, 2)  # B N^2 2
-        # ep are all middle points between keypoints pair-wise
-        L = (
-            torch.cat([F, torch.zeros_like(F)], 1).unsqueeze(-1) +
-            torch.cat([torch.zeros_like(F), F], 1).unsqueeze(-2)
-        ).flatten(2)  # B2CN^2
-        # L is concatenated endpoint features from before
-        E = torch.cat([
-            my_align(feat, ep, self.rescale) for feat in feats
-        ], 1)  # BCN^2
-        # E is bilinear sampled CNN features on middle points
-        CE = torch.cat([L, E], 1)
-        # Concatenate the three parts
-        mask = torch.arange(F.shape[-1], device=n.device).expand(len(F), F.shape[-1]) < n.unsqueeze(-1)
-        # BN
-        mask = mask.unsqueeze(-2) & mask.unsqueeze(-1)
-        # Mask out non-existent keypoints (whose index >= n_points)
-        # Projection with MLP from the three feature parts into final edge features
-        # Also has normalization and gating for better stability
-        return (torch.sigmoid(self.edge_gate(CE)) * FF.normalize(self.edge_proj(CE), dim=1) * mask.flatten(1).unsqueeze(1)).reshape(F.shape[0], -1, F.shape[-1], F.shape[-1])
-    
-    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, e_src, e_tgt, g):
+    def points(self, y_src, y_tgt, P_src, P_tgt, n_src, n_tgt, g):
         resc = P_src.new_tensor(self.rescale)
         P_src, P_tgt = P_src / resc, P_tgt / resc
         P_src, P_tgt = P_src.transpose(1, 2), P_tgt.transpose(1, 2)
@@ -157,14 +133,8 @@ class Net(nn.Module):
         # Merge features from parties
         pcd = torch.cat((P_src, P_tgt), -1)
         y_cat = torch.cat((y_src, y_tgt), -1)
-        e_cat = torch.zeros([
-            e_src.shape[0], e_src.shape[1],
-            e_src.shape[2] + e_tgt.shape[2], e_src.shape[3] + e_tgt.shape[3]
-        ], dtype=e_src.dtype, device=e_src.device)
-        e_cat[..., :e_src.shape[2], :e_src.shape[3]] = e_src
-        e_cat[..., e_src.shape[2]:, e_src.shape[3]:] = e_tgt
         # call point feature propagator with masked point and edge features
-        r1, r2 = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, e_cat, g)
+        r1, r2 = self.pn(torch.cat((pcd, y_cat), 1) * key_mask_cat, g)
         # gather the features for current party
         return r1[..., :y_src.shape[-1]], r2[..., :y_src.shape[-1]]
 
@@ -187,10 +157,6 @@ class Net(nn.Module):
         # Get (full) keypoints and global features
         F_src, F_tgt, g_src, g_tgt = self.get_feats(feat_srcs, feat_tgts, P_src, P_tgt)
 
-        # Get edge features
-        ea_src = self.edge_activations(feat_srcs, F_src, P_src, ns_src)
-        ea_tgt = self.edge_activations(feat_tgts, F_tgt, P_tgt, ns_tgt)
-
         # MLP projection for downstream keypoint features
         y_src, y_tgt = self.pix2pt_proj(F_src), self.pix2pt_proj(F_tgt)
 
@@ -211,8 +177,8 @@ class Net(nn.Module):
         y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)'''
         
         # Call PointNet++ based feature propagation
-        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
-        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
+        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, g_src)
+        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, g_tgt)
 
         # Simple dot-product affinity
         sim = torch.einsum(

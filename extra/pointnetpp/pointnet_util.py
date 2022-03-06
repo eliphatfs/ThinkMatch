@@ -223,7 +223,7 @@ class PointNetSetAbstractionMsg(nn.Module):
             self.conv_blocks.append(convs)
             self.bn_blocks.append(bns)
 
-    def forward(self, xyz, points, es):
+    def forward(self, xyz, points):
         """
         Input:
             xyz: input points position data, [B, C, N]
@@ -255,16 +255,6 @@ class PointNetSetAbstractionMsg(nn.Module):
                 grouped_points = grouped_xyz
 
             # Basically PointNet++, but we don't do down-sampling
-            # And here we concatenate with extra edge feature inputs
-            grouped_points = torch.cat([
-                grouped_points,
-                es[
-                    torch.arange(group_idx.shape[0], device=group_idx.device).reshape(-1, 1, 1),
-                    :,
-                    torch.arange(group_idx.shape[1], device=group_idx.device).reshape(1, -1, 1),
-                    group_idx
-                ]
-            ], dim=-1)
             grouped_points = grouped_points.permute(0, 3, 2, 1)  # [B, D, K, S]
             for j in range(len(self.conv_blocks[i])):
                 conv = self.conv_blocks[i][j]

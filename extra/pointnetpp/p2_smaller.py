@@ -57,14 +57,14 @@ class get_model(nn.Module):
     def __init__(self, additional_channel, g_channel, e_channel):
         super(get_model, self).__init__()
         self.normal_channel = True
-        self.sa1 = PointNetSetAbstractionMsg(46, [0.1, 0.2, 0.3, 0.6, 1.0], [46] * 5, 3 + additional_channel + e_channel, [[96, 128], [192, 256], [96, 128], [56, 64], [40, 64]])
+        self.sa1 = PointNetSetAbstractionMsg(100, [0.1, 0.2, 0.3, 0.6, 1.0], [100] * 5, 3 + additional_channel + e_channel, [[96, 128], [192, 256], [96, 128], [56, 64], [40, 64]])
         self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=512 + 128 + 3, mlp=[400, 1024], group_all=True)
         self.fp3 = PointNetFeaturePropagation(in_channel=1024 + 512 + 128, mlp=[1024, 512])
         self.fp1 = PointNetFeaturePropagation(in_channel=512 + 6 + 32 * 0 + g_channel + additional_channel, mlp=[512, 256])
         self.conv1 = nn.Conv1d(256, 32, 1)
         # self.cls_emb = nn.Embedding(len(labels), 32)
 
-    def forward(self, xyz, es, g):
+    def forward(self, xyz, g):
         # Basically PointNet++, but we don't do down-sampling
         # And we have edge features and CNN global features
         # The global features replace auxiliary classifier features in PointNet++
@@ -78,7 +78,7 @@ class get_model(nn.Module):
         else:
             l0_points = xyz
             l0_xyz = xyz
-        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points, es)
+        l1_xyz, l1_points = self.sa1(l0_xyz, l0_points)
         l2_xyz, l2_points = l1_xyz, l1_points  # self.sa2(l1_xyz, l1_points)
         # One less layer than PointNet++ since we don't down-sample
         l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
