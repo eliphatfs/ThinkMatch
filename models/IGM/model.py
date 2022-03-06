@@ -8,7 +8,6 @@ from src.lap_solvers.sinkhorn import Sinkhorn
 from extra.pointnetpp import p2_smaller
 from models.BBGM.sconv_archs import SiameseSConvOnNodes
 from src.loss_func import PermutationLoss
-from models.PCA.affinity_layer import Affinity
 
 
 loss_fn = PermutationLoss()
@@ -75,10 +74,10 @@ class Net(nn.Module):
         self.tau = cfg.IGM.SK_TAU
         self.rescale = cfg.PROBLEM.RESCALE
         self.pn = p2_smaller.get_model(256, 128, 64)
+        self.masker = nn.Conv2d(256, 1, 1)
         self.sinkhorn = Sinkhorn(
             max_iter=cfg.IGM.SK_ITER_NUM, tau=self.tau, epsilon=cfg.IGM.SK_EPSILON
         )
-        self.aff = Affinity(32)
         self.backbone_params = list(self.resnet.parameters())
 
     @property
@@ -215,16 +214,18 @@ class Net(nn.Module):
         ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
         ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
 
-        # Metric learning affinity
-        sim = self.aff(folding_src.transpose(1, 2), folding_tgt.transpose(1, 2))
         # Simple dot-product affinity
-        # sim = torch.einsum(
-        #     'bci,bcj->bij',
-        #     folding_src,
-        #     folding_tgt
-        # )
+        sim = torch.einsum(
+            'bci,bcj->bij',
+            folding_src,
+            folding_tgt
+        )
         # Sinkhorn and output
         data_dict['ds_mat'] = self.sinkhorn(sim, ns_src, ns_tgt, dummy_row=True)
+        mask_src = self.masker(ff_src)  # B x s
+        mask_tgt = self.masker(ff_tgt)  # B x t
+        # B x s x t
+        data_dict['ds_mat'] = data_dict['ds_mat'] * mask_src.unsqueeze(-1) * mask_tgt.unsqueeze(-2)
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         # Output some of the useful features for possible integration with other modules
         # Not used when running stand-alone
