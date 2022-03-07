@@ -239,7 +239,7 @@ class Net(nn.Module):
             "ns_tgt": ns_tgt.detach().cpu().numpy()
         }, open("vis_aggr_data.pkl", "wb"))'''
         vis_aggr.visualize(
-            img_src.detach().cpu().numpy(),
+            src.detach().cpu().numpy(),
             P_src.detach().cpu().numpy(),
             ns_src.detach().cpu().numpy(),
             vis_aggr.ps
