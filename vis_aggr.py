@@ -17,7 +17,7 @@ def vis_single(img, p, midx):
     for i in range(0, 10, 2):
         max_idx = midx[i]  # D' x S, 0 ~ K
         group_idx = midx[i + 1]  # S x K
-        B, S, K = group_idx.shape
+        S, K = group_idx.shape
         max_idx_revisit = group_idx[numpy.arange(S).reshape(1, -1), max_idx]  # D' x S
         for j in range(len(max_idx_revisit)):
             for k in range(S):
