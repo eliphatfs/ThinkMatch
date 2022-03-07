@@ -11,7 +11,7 @@ def vis_single(img, p, midx):
     prefix = str(uuid.uuid4())
     img = (img - img.min()) / (img.max() - img.min())
     plotlib.figure()
-    plotlib.imshow(img)
+    plotlib.imshow(img.transpose((1, 2, 0)))
     plotlib.scatter(p[:, 0], p[:, 1])
     s = collections.defaultdict(int)
     for i in range(0, 10, 2):
