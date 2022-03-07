@@ -28,7 +28,7 @@ def vis_single(img, p, midx):
     maxed = max(s.values())
     for i in range(len(p)):
         for j in range(len(p)):
-            plotlib.plot([p[i, 0], p[j, 0]], [p[i, 1], p[j, 1]], alpha=s[i, j] / maxed)
+            plotlib.plot([p[i, 0], p[j, 0]], [p[i, 1], p[j, 1]], alpha=s[i, j] / maxed, color='C0')
     plotlib.savefig("aggr/" + prefix + ".png", dpi=240)
 
 
