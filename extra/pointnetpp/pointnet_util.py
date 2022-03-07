@@ -274,7 +274,7 @@ class PointNetSetAbstractionMsg(nn.Module):
             new_points, max_aggr_idx = torch.max(grouped_points, 2)  # [B, D', S]
             new_points_list.append(new_points)
             vis_aggr.ps.append(max_aggr_idx.detach().cpu().numpy())
-            vis_aggr.ps.append(group_idx)
+            vis_aggr.ps.append(group_idx.detach().cpu().numpy())
 
         new_xyz = new_xyz.permute(0, 2, 1)
         new_points_concat = torch.cat(new_points_list, dim=1)
