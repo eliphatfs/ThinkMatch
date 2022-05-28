@@ -231,9 +231,10 @@ if __name__ == '__main__':
     image_dataset = {
         x: GMDataset(cfg.DATASET_FULL_NAME,
                      dataset_len[x],
-                     cfg.PROBLEM.TRAIN_ALL_GRAPHS if x == 'train' else cfg.PROBLEM.TEST_ALL_GRAPHS,
                      cfg.TRAIN.CLASS if x == 'train' else cfg.EVAL.CLASS,
-                     cfg.PROBLEM.TYPE)
+                     sets=x,
+                     problem=cfg.PROBLEM.TYPE,
+                     obj_resize=cfg.PROBLEM.RESCALE)
         for x in ('train', 'test')}
     dataloader = {x: get_dataloader(image_dataset[x], fix_seed=(x == 'test'))
         for x in ('train', 'test')}
