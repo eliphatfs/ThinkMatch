@@ -210,15 +210,15 @@ class Net(nn.Module):
         y_tgt = unbatch_features(y_tgt, G_tgt.x, ns_tgt)'''
         
         # Call PointNet++ based feature propagation
-        ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
-        ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
+        # ff_src, folding_src = self.points(y_src, y_tgt, P_src, P_tgt, ns_src, ns_tgt, ea_src, ea_tgt, g_src)
+        # ff_tgt, folding_tgt = self.points(y_tgt, y_src, P_tgt, P_src, ns_tgt, ns_src, ea_tgt, ea_src, g_tgt)
 
         # Simple dot-product affinity
-        sim = torch.einsum(
-            'bci,bcj->bij',
-            folding_src,
-            folding_tgt
-        )
+        # sim = torch.einsum(
+        #     'bci,bcj->bij',
+        #     folding_src,
+        #     folding_tgt
+        # )
         sim = self.pn({
             'descriptors0': y_src,
             'descriptors1': y_tgt,
@@ -234,7 +234,7 @@ class Net(nn.Module):
         data_dict['perm_mat'] = hungarian(data_dict['ds_mat'], ns_src, ns_tgt)
         # Output some of the useful features for possible integration with other modules
         # Not used when running stand-alone
-        data_dict['ff'] = [ff_src, ff_tgt]
+        # data_dict['ff'] = [ff_src, ff_tgt]
         data_dict['rf'] = [y_src, y_tgt]
         data_dict['gf'] = [g_src, g_tgt]
         return data_dict
