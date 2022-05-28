@@ -168,8 +168,8 @@ class Net(nn.Module):
         return r1[..., :y_src.shape[-1]], r2[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
-        import vis_aggr
-        import pickle
+        # import vis_aggr
+        # import pickle
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
@@ -238,13 +238,13 @@ class Net(nn.Module):
             "ns_src": ns_src.detach().cpu().numpy(),
             "ns_tgt": ns_tgt.detach().cpu().numpy()
         }, open("vis_aggr_data.pkl", "wb"))'''
-        vis_aggr.visualize(
-            src.detach().cpu().numpy(),
-            P_src.detach().cpu().numpy(),
-            ns_src.detach().cpu().numpy(),
-            vis_aggr.ps
-        )
+        # vis_aggr.visualize(
+        #     src.detach().cpu().numpy(),
+        #     P_src.detach().cpu().numpy(),
+        #     ns_src.detach().cpu().numpy(),
+        #     vis_aggr.ps
+        # )
         
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         return data_dict
