@@ -168,8 +168,6 @@ class Net(nn.Module):
         return r1[..., :y_src.shape[-1]], r2[..., :y_src.shape[-1]]
 
     def forward(self, data_dict, **kwargs):
-        import vis_aggr
-        import pickle
         src, tgt = data_dict['images']
         P_src, P_tgt = data_dict['Ps']
         ns_src, ns_tgt = data_dict['ns']
