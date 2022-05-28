@@ -25,5 +25,12 @@ def data_to_cuda(inputs):
     elif type(inputs) in [pyg.data.Data, pyg.data.Batch]:
         inputs = inputs.to('cuda')
     else:
-        raise TypeError('Unknown type of inputs: {}'.format(type(inputs)))
+        try:
+            pyg_datatypes = [pyg.data.Data, pyg.data.Batch, pyg.data.batch.DataBatch]
+        except AttributeError:
+            pyg_datatypes = [pyg.data.Data, pyg.data.Batch]
+        if type(inputs) in pyg_datatypes:
+            inputs = inputs.to('cuda')
+        else:
+            raise TypeError('Unknown type of inputs: {}'.format(type(inputs)))
     return inputs
